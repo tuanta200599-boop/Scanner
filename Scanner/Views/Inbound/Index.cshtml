@@ -1,0 +1,144 @@
+@model Scanner.Models.AsnListViewModel
+
+@{
+    ViewData["Title"] = "Inbound ASN";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4>📦 Danh sách Xe vào (ASN)</h4>
+    <button class="btn btn-outline-secondary btn-sm" onclick="location.reload()">
+        <i class="bi bi-arrow-clockwise"></i> Làm mới
+    </button>
+</div>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger" role="alert">
+        @Html.ValidationSummary(false, "", new { @class = "mb-0" })
+    </div>
+}
+
+<div class="row row-cols-1 row-cols-md-2 g-3">
+    @if (Model.Items != null && Model.Items.Any())
+    {
+        foreach (var item in Model.Items)
+        {
+            <div class="col">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <span class="fw-bold fs-5">@item.VehicleNo</span>
+                        <span class="badge bg-light text-dark">@item.Status</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-2">
+                            <div class="col-6">
+                                <small class="text-muted d-block">Tài xế</small>
+                                <strong>@item.DriverName</strong><br />
+                                <a href="tel:@item.DriverPhone" class="text-decoration-none">📞 @item.DriverPhone</a>
+                            </div>
+                            <div class="col-6 text-end">
+                                <small class="text-muted d-block">Tuyến</small>
+                                <strong>@item.RouteCode</strong>
+                            </div>
+                        </div>
+
+                        <hr class="my-2" />
+
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <small class="text-muted d-block">Cửa nhập (Dock)</small>
+                                <span class="badge bg-info text-dark fs-6">@item.DockCode</span>
+                            </div>
+                            <div class="col-6 text-end">
+                                <small class="text-muted d-block">Số lượng SKU</small>
+                                <span class="fw-bold fs-6">@item.NumOfSku</span>
+                            </div>
+                        </div>
+
+                        @if (item.Status.Equals("Receipt", StringComparison.OrdinalIgnoreCase) || item.Status.Equals("Reciept",
+                       StringComparison.OrdinalIgnoreCase))
+                        {
+                            <a href="@Url.Action("Putaway", "Inbound", new { asnId = item.AsnId })" class="btn btn-primary w-100 fw-bold py-2">
+                                📦 Chọn pallet
+                            </a>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-success w-100 fw-bold py-2 btn-arrive" data-id="@item.AsnId"
+                                data-vehicle="@item.VehicleNo">
+                                ✅ Báo Xe Đã Tới
+                            </button>
+                        }
+                    </div>
+                    <div class="card-footer text-muted text-center fs-7 arrived-time" id="time-@item.AsnId"
+                        style="display: none;">
+                        <!-- Time will be injected here via JS -->
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="col-12 text-center py-5">
+            <span class="fs-1">📭</span>
+            <p class="text-muted mt-2">Không có dữ liệu ASN nào.</p>
+        </div>
+    }
+</div>
+
+@{
+    var totalPages = Math.Max(1, (int)Math.Ceiling((double)Model.TotalCount / Model.PageSize));
+}
+
+<nav class="mt-4" aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+        <li class="page-item @(Model.PageIndex <= 1 ? "disabled" : "")">
+            <a class="page-link" asp-action="Index" asp-route-page="@(Model.PageIndex - 1)">Trước</a>
+        </li>
+        @for (int i = 1; i <= totalPages; i++)
+        {
+            <li class="page-item @(i == Model.PageIndex ? "active" : "")">
+                <a class="page-link" asp-action="Index" asp-route-page="@i">@i</a>
+            </li>
+        }
+        <li class="page-item @(Model.PageIndex >= totalPages ? "disabled" : "")">
+            <a class="page-link" asp-action="Index" asp-route-page="@(Model.PageIndex + 1)">Tiếp</a>
+        </li>
+    </ul>
+</nav>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('.btn-arrive').click(function () {
+                var btn = $(this);
+                var id = btn.data('id');
+                var vehicle = btn.data('vehicle');
+
+                if (confirm('Xác nhận xe ' + vehicle + ' đã tới bãi?')) {
+                    var originalHtml = btn.html();
+                    btn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang xử lý...').prop('disabled', true);
+
+                    $.post('@Url.Action("UpdateStatus", "Inbound")', { id: id })
+                        .done(function (response) {
+                            if (response.success) {
+                                // Change button appearance
+                                btn.removeClass('btn-success').addClass('btn-secondary').html('✔️ Đã cập nhật');
+
+                                // Show time
+                                $('#time-' + id).text('Time: ' + response.timestamp).slideDown();
+                            } else {
+                                alert('Lỗi: ' + response.message);
+                                btn.html(originalHtml).prop('disabled', false);
+                            }
+                        })
+                        .fail(function () {
+                            alert('Không kết nối được với máy chủ để cập nhật!');
+                            btn.html(originalHtml).prop('disabled', false);
+                        });
+                }
+            });
+        });
+    </script>
+}

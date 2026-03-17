@@ -1,0 +1,237 @@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0d6efd">
+    <link rel="apple-touch-icon" href="~/icon-192.png">
+    <link rel="manifest" href="~/manifest.json" />
+    <title>Install WMS Scanner</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            overscroll-behavior-y: none;
+        }
+
+        .install-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 24px;
+            padding: 40px 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.05);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .app-icon {
+            width: 100px;
+            height: 100px;
+            border-radius: 22px;
+            margin: 0 auto 24px;
+            box-shadow: 0 8px 24px rgba(13, 110, 253, 0.3);
+            background: #0d6efd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 36px;
+            font-weight: 800;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 12px;
+        }
+
+        p {
+            color: #555;
+            font-size: 15px;
+            line-height: 1.5;
+            margin-bottom: 30px;
+        }
+
+        .btn-install {
+            background: #0d6efd;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 16px 32px;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
+        }
+
+        .btn-install:active {
+            transform: scale(0.97);
+            box-shadow: 0 2px 6px rgba(13, 110, 253, 0.2);
+        }
+
+        .ios-instruction {
+            display: none;
+            background: #f8f9fa;
+            border-radius: 16px;
+            padding: 24px;
+            margin-top: 10px;
+            text-align: left;
+            border: 1px solid #e9ecef;
+        }
+
+        .ios-instruction.show {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .instruction-step {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            color: #333;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .instruction-step:last-child {
+            margin-bottom: 0;
+        }
+
+        .icon-box {
+            width: 32px;
+            height: 32px;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            color: #0d6efd;
+        }
+
+        @@keyframes slideUp {
+            from { transform: translateY(40px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @@keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Dấu hiệu chứng tỏ đang view trên app cài đặt */
+        .already-installed {
+            display: none;
+            color: #198754;
+            font-weight: 600;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="install-card">
+        <div class="app-icon">WMS</div>
+        <h1>Cài đặt Ứng dụng</h1>
+        <p>Để có trải nghiệm mượt mà, sử dụng toàn màn hình và hoạt động ổn định nhất, vui lòng cài đặt WMS Scanner vào màn hình chính.</p>
+
+        <!-- Nút cho Android / PC -->
+        <button id="installBtn" class="btn-install" style="display: none;">
+            <i class="bi bi-download"></i> Cài đặt ngay
+        </button>
+
+        <!-- Hướng dẫn cho iOS Safari -->
+        <div id="iosInstruction" class="ios-instruction">
+            <div class="instruction-step">
+                <div class="icon-box"><i class="bi bi-box-arrow-up"></i></div>
+                <span>1. Nhấn nút <b>Chia sẻ</b> dưới màn hình</span>
+            </div>
+            <div class="instruction-step">
+                <div class="icon-box"><i class="bi bi-plus-square"></i></div>
+                <span>2. Chọn <b>Thêm vào MH chính</b></span>
+            </div>
+        </div>
+
+        <div id="alreadyInstalledMsg" class="already-installed">
+            <i class="bi bi-check-circle-fill"></i> Mở ứng dụng từ Màn hình chính
+        </div>
+    </div>
+
+    <script>
+        let deferredPrompt;
+        const installBtn = document.getElementById('installBtn');
+        const iosInstruction = document.getElementById('iosInstruction');
+        const alreadyInstalledMsg = document.getElementById('alreadyInstalledMsg');
+
+        // Detect iOS
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        
+        // Detect Standalone (đã cài đặt)
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+        if (isStandalone) {
+            // Nếu đã cài đặt rồi mà lạc vào trang này, có thể chuyển hướng về trang chủ
+            installBtn.style.display = 'none';
+            iosInstruction.classList.remove('show');
+            alreadyInstalledMsg.style.display = 'block';
+            setTimeout(() => {
+                window.location.replace('/');
+            }, 2000);
+        } else {
+            if (isIOS) {
+                // Trên iOS không có API install tự động, hiện hướng dẫn bằng tay
+                iosInstruction.classList.add('show');
+            } else {
+                // Trên Android / Chrome
+                // Trình duyệt sẽ bắn event này nếu thoả mãn điều kiện PWA
+                window.addEventListener('beforeinstallprompt', (e) => {
+                    // Ngăn trình duyệt tự hiện popup nhỏ mặc định (tùy chọn)
+                    e.preventDefault();
+                    deferredPrompt = e;
+                    installBtn.style.display = 'flex';
+                });
+
+                installBtn.addEventListener('click', async () => {
+                    if (deferredPrompt) {
+                        deferredPrompt.prompt();
+                        const { outcome } = await deferredPrompt.userChoice;
+                        if (outcome === 'accepted') {
+                            console.log('User accepted the install prompt');
+                        }
+                        deferredPrompt = null;
+                        installBtn.style.display = 'none';
+                    } else {
+                        alert('Trình duyệt của bạn không hỗ trợ cài đặt tự động, vui lòng dùng chức năng "Add to Home screen" trong menu.');
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

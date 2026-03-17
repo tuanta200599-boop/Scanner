@@ -1,0 +1,289 @@
+@model Scanner.Models.PalletListViewModel
+
+@{
+    ViewData["Title"] = "Putaway";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4>📥 Cất hàng vào Pallet</h4>
+    <button class="btn btn-outline-secondary btn-sm" onclick="location.reload()">
+        <i class="bi bi-arrow-clockwise"></i> Load lại
+    </button>
+</div>
+
+<form method="get" class="mb-4 d-flex gap-2">
+    @if (Model.AsnId.HasValue)
+    {
+        <input type="hidden" name="asnId" value="@Model.AsnId" />
+    }
+    <input type="text" name="palletCode" id="palletSearchInput" class="form-control" placeholder="🔍 Nhập mã Pallet để tìm..."
+        value="@Model.SearchPalletCode" autofocus />
+    <button type="submit" class="btn btn-primary">Tìm</button>
+    @if (!string.IsNullOrEmpty(Model.SearchPalletCode))
+    {
+        <a asp-action="Putaway" asp-route-asnId="@Model.AsnId" class="btn btn-outline-danger">Xóa</a>
+    }
+</form>
+
+@* Removed validation summary to clean up UI as per user request *@
+
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+    @if (Model.Items != null && Model.Items.Any())
+    {
+        foreach (var item in Model.Items)
+        {
+            <div class="col">
+                <div class="card shadow-sm h-100 border-primary" style="cursor: pointer"
+                    onclick="openScanModal(@item.Id, '@item.PalletCode', '@item.PalletName')">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fs-4 fw-bold text-primary">@item.PalletCode</span>
+                            <span
+                                class="badge @(item.Status.Equals("Active", StringComparison.OrdinalIgnoreCase) ? "bg-success" : "bg-warning text-dark")">@item.Status</span>
+                        </div>
+                        <p class="card-text text-muted mb-0">📝 @item.PalletName</p>
+                        <div class="mt-3 text-center">
+                            <button class="btn btn-sm btn-primary w-100 rounded-pill">
+                                <i class="bi bi-upc-scan"></i> Bắt đầu quét vào Pallet này
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="col-12 text-center py-5">
+            <span class="fs-1">📦</span>
+            <p class="text-muted mt-2">Không tìm thấy Pallet nào.</p>
+        </div>
+    }
+</div>
+
+@{
+    var totalPages = Math.Max(1, (int)Math.Ceiling((double)Model.TotalCount / Model.PageSize));
+}
+
+<nav class="mt-4" aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+        <li class="page-item @(Model.PageIndex <= 1 ? "disabled" : "")">
+            <a class="page-link" asp-action="Putaway" asp-route-page="@(Model.PageIndex - 1)"
+                asp-route-palletCode="@Model.SearchPalletCode" asp-route-asnId="@Model.AsnId">Trước</a>
+        </li>
+        @for (int i = 1; i <= totalPages; i++)
+        {
+            <li class="page-item @(i == Model.PageIndex ? "active" : "")">
+                <a class="page-link" asp-action="Putaway" asp-route-page="@i"
+                    asp-route-palletCode="@Model.SearchPalletCode" asp-route-asnId="@Model.AsnId">@i</a>
+            </li>
+        }
+        <li class="page-item @(Model.PageIndex >= totalPages ? "disabled" : "")">
+            <a class="page-link" asp-action="Putaway" asp-route-page="@(Model.PageIndex + 1)"
+                asp-route-palletCode="@Model.SearchPalletCode" asp-route-asnId="@Model.AsnId">Tiếp</a>
+        </li>
+    </ul>
+</nav>
+
+<!-- Fullscreen Scan Modal -->
+<div class="modal fade" id="scanModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static"
+    data-bs-keyboard="false">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-upc-scan me-2"></i> Quét vào: 
+                    @if (Model.AsnId.HasValue)
+                    {
+                        <strong class="text-info">@Model.AsnId</strong><span> - </span>
+                    }
+                    <strong id="modalPalletCode" class="text-warning"></strong>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body d-flex flex-column" style="background-color: #f8f9fa;">
+
+                <div class="card shadow-sm mb-3 border-0">
+                    <div class="card-body text-center p-4">
+                        <label for="barcodeInput" class="form-label fs-5 fw-bold text-muted mb-3">Sẵn sàng quét mã
+                            (AsnId-SkuId)</label>
+                        <input type="text" id="barcodeInput"
+                            class="form-control form-control-lg text-center fw-bold fs-3"
+                            placeholder="Tít mã vạch vào đây..." autocomplete="off">
+                        <small class="text-muted d-block mt-2">Hệ thống sẽ tự động gửi khi quét xong.</small>
+                    </div>
+                </div>
+
+                <div class="flex-grow-1 overflow-auto">
+                    <h6 class="text-muted fw-bold mb-2">Lịch sử quét:</h6>
+                    <ul id="scanHistoryList" class="list-group list-group-flush rounded shadow-sm">
+                        <!-- Lịch sử quét chèn vào đây bởi JS -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var currentPalletCode = '';
+        var scanModal = null;
+        var barcodeInput = document.getElementById('barcodeInput');
+        var isProcessing = false;
+
+        document.addEventListener("DOMContentLoaded", function () {
+            scanModal = new bootstrap.Modal(document.getElementById('scanModal'));
+
+            // Focus on main search input on page load
+            const palletSearchInput = document.getElementById('palletSearchInput');
+            if (palletSearchInput) {
+                palletSearchInput.focus();
+                // Select text for easier re-scan
+                palletSearchInput.select();
+            }
+
+            // Auto-focus the input whenever the modal is fully opened
+            document.getElementById('scanModal').addEventListener('shown.bs.modal', function () {
+                barcodeInput.focus();
+            });
+
+            // Keep focus on input if user clicks anywhere blindly in the background body area
+            document.querySelector('#scanModal .modal-body').addEventListener('click', function () {
+                barcodeInput.focus();
+            });
+
+            // Listen for Enter key on the barcode input
+            barcodeInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    var code = barcodeInput.value.trim();
+                    if (code !== "") {
+                        processBarcode(code);
+                    }
+                }
+            });
+        });
+
+        function openScanModal(palletId, palletCode, palletName) {
+            currentPalletCode = palletCode;
+            document.getElementById('modalPalletCode').innerText = palletCode;
+
+            // Clear input and history for new session
+            barcodeInput.value = '';
+            document.getElementById('scanHistoryList').innerHTML = '';
+
+            // Update pallet to inactive (IsActive = false)
+            $.ajax({
+                url: '@Url.Action("UpdatePalletActiveStatus", "Inbound")',
+                type: 'POST',
+                data: { palletId: palletId, palletCode: palletCode, palletName: palletName },
+                success: function (response) {
+                    if (!response.success) {
+                        console.error('Không thể cập nhật trạng thái Pallet: ' + response.message);
+                    }
+                },
+                error: function () {
+                    console.error('Lỗi kết nối khi cập nhật trạng thái Pallet.');
+                }
+            });
+
+            scanModal.show();
+        }
+
+        function processBarcode(barcode) {
+            if (isProcessing) return;
+            isProcessing = true;
+
+            // Tạm thời Disable input để tránh quét nhầm đè mã khi mạng chậm
+            barcodeInput.disabled = true;
+
+            $.ajax({
+                url: '@Url.Action("ScanBarcode", "Inbound")',
+                type: 'POST',
+                data: { barcode: barcode, palletCode: currentPalletCode, asnId: '@Model.AsnId' },
+                success: function (response) {
+                    if (response.success) {
+                        addHistoryItem(barcode, true, response.message);
+                        playSuccessBeep();
+                    } else {
+                        addHistoryItem(barcode, false, response.message);
+                        playErrorBeep();
+                    }
+                },
+                error: function () {
+                    addHistoryItem(barcode, false, "Lỗi kết nối máy chủ / Mất mạng.");
+                    playErrorBeep();
+                },
+                complete: function () {
+                    // Reset trạng thái sẵn sàng cho mã tiếp theo
+                    barcodeInput.value = '';
+                    barcodeInput.disabled = false;
+                    barcodeInput.focus();
+                    isProcessing = false;
+                }
+            });
+        }
+
+        function addHistoryItem(code, isSuccess, message) {
+            var list = document.getElementById('scanHistoryList');
+            var timeString = new Date().toLocaleTimeString('vi-VN', { hour12: false });
+
+            var iconHtml = isSuccess ? '<i class="bi bi-check-circle-fill text-success fs-4"></i>' : '<i class="bi bi-x-circle-fill text-danger fs-4"></i>';
+            var borderClass = isSuccess ? 'border-success' : 'border-danger';
+            var bgClass = isSuccess ? 'bg-success-subtle' : 'bg-danger-subtle';
+
+            var li = document.createElement('li');
+            li.className = `list-group-item d-flex align-items-center gap-3 ${borderClass} border-start border-4 mb-2 ${bgClass}`;
+            li.innerHTML = `
+                                                                        ${iconHtml}
+                                                                        <div class="flex-grow-1">
+                                                                            <div class="d-flex justify-content-between">
+                                                                                <strong class="fs-5">${code}</strong>
+                                                                                <small class="text-muted">${timeString}</small>
+                                                                            </div>
+                                                                            <div class="text-muted small">${message}</div>
+                                                                        </div>
+                                                                    `;
+
+            // Chèn lên đầu danh sách
+            list.insertBefore(li, list.firstChild);
+        }
+
+        // AudioContext for the Web Audio API
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+
+        function playBeep(frequency, type, duration, vol) {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.type = type;
+            oscillator.frequency.value = frequency;
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            gainNode.gain.value = vol;
+
+            oscillator.start();
+            setTimeout(function () {
+                oscillator.stop();
+            }, duration);
+        }
+
+        function playSuccessBeep() {
+            // Hai tiếng bíp ngắn (tít tít)
+            playBeep(1200, 'sine', 100, 0.5);
+            setTimeout(() => playBeep(1200, 'sine', 150, 0.5), 150);
+        }
+
+        function playErrorBeep() {
+            // Một tiếng bíp dài, vang, trầm hơn báo lỗi
+            playBeep(300, 'sawtooth', 600, 0.8);
+        }
+    </script>
+}
