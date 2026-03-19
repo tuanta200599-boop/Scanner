@@ -22,19 +22,6 @@ firebase.initializeApp({
 // Lấy messaging instance
 const messaging = firebase.messaging();
 
-// Xử lý thông báo khi ở background
-//messaging.onBackgroundMessage(function (payload) {
-//    console.log('[firebase-messaging-sw.js] Nhận background message:', payload);
-
-//    const notificationTitle = (payload.notification && payload.notification.title) || "Thông báo";
-//    const notificationOptions = {
-//        body: payload.notification?.body || 'Không có nội dung'
-//        //icon: '/icon.png' // thay nếu cần
-//    };
-
-//    self.registration.showNotification(notificationTitle, notificationOptions);
-//});
-// Khởi tạo BroadcastChannel để gửi tin nhắn cho UI
 const bc = new BroadcastChannel('fcm_notifications');
 
 messaging.onBackgroundMessage((payload) => {
@@ -45,7 +32,10 @@ messaging.onBackgroundMessage((payload) => {
 
     const notificationOptions = {
         body: payload.notification?.body || payload.data?.body || 'Không có nội dung',
-        icon: '/favicon.ico'
+        icon: '/favicon.ico',
+        badge: '/icon-192.png',
+        vibrate: [200, 100, 200, 100, 200, 100, 200],
+        requireInteraction: true
     };
 
     // Gửi dữ liệu cho Foreground UI nếu đang mở
@@ -58,4 +48,24 @@ messaging.onBackgroundMessage((payload) => {
     self.registration.showNotification(notificationTitle, notificationOptions)
         .then(() => console.log('✅ Notification đã được hiển thị'))
         .catch(err => console.error('❌ Lỗi khi hiển thị notification:', err));
+});
+
+// Xử lý sự kiện khi người dùng click vào thông báo từ màn hình Lock Screen/Notification Center
+self.addEventListener('notificationclick', function (event) {
+    console.log('[firebase-messaging-sw.js] Sự kiện click vào thông báo:', event.notification.tag);
+
+    // Đóng thông báo sau khi click
+    event.notification.close();
+
+    // Mở ứng dụng hoặc focus về lại tab PWA nếu đang chạy
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
+            // Nếu app đang mở (kể cả background/tab ẩn), focus lại nó
+            if (windowClients.length > 0) {
+                return windowClients[0].focus();
+            }
+            // Nếu app đang đóng hẳn, mở lại app/trang chủ
+            return clients.openWindow('/');
+        })
+    );
 });

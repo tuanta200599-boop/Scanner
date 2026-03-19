@@ -14,5 +14,10 @@ namespace Scanner.Constants
             public const string GetPalletList = "Configuration/Pallet/GetList";
             public const string UpdatePallet = "Configuration/Pallet/Update";
         }
+        public static class Outbound
+        {
+            public const string GetPickTaskList = "Outbound/ListPickTask";
+            public const string RecordPickingScan = "Outbound/RecordPickingScan";
+        }
     }
 }

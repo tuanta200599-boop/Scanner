@@ -1,0 +1,226 @@
+@model Scanner.Models.PickTaskListViewModel
+
+@{
+    ViewData["Title"] = "Outbound Picking";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4>🛒 Lấy hàng (Picking)</h4>
+    <button class="btn btn-outline-secondary btn-sm" onclick="location.reload()">
+        <i class="bi bi-arrow-clockwise"></i> Làm mới
+    </button>
+</div>
+
+@if (!ViewData.ModelState.IsValid)
+
+{
+    <div class="alert alert-danger" role="alert">
+        @Html.ValidationSummary(false, "", new { @class = "mb-0" })
+    </div>
+}
+
+<div class="row row-cols-1 row-cols-md-2 g-3">
+    @if (Model.Items != null && Model.Items.Any())
+
+    {
+
+        foreach (var item in Model.Items)
+
+        {
+            <div class="col">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <span class="fw-bold fs-5">Mã nhiệm vụ: @item.TaskCode</span>
+                        <span class="badge bg-light text-dark">ID: @item.PickingTaskId</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-2">
+                            <div class="col-6">
+                                <small class="text-muted d-block">Loại nhiệm vụ</small>
+                                <strong>@item.TaskType</strong>
+                            </div>
+                            <div class="col-6 text-end">
+                                <small class="text-muted d-block">Đơn vị (UOM)</small>
+                                <strong>@item.Uom</strong>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <small class="text-muted d-block">S.Lượng yêu cầu</small>
+                                <span class="badge bg-info text-dark fs-6">@item.RequestedQty</span>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn btn-primary w-100 fw-bold py-2 btn-detail"
+                            data-id="@item.PickingTaskId" data-code="@item.TaskCode" data-bs-toggle="modal"
+                            data-bs-target="#scanModal">
+                            @if (!string.IsNullOrEmpty(item.TaskType) && item.TaskType.Equals("FullPallet", StringComparison.OrdinalIgnoreCase))
+                            {
+                                @:🔍 Pick Full Pallet
+                            }
+                            else
+                            {
+                                @:🔍 Picking & Quét mã
+                            }
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+
+    }
+
+    else
+
+    {
+        <div class="col-12 text-center py-5">
+            <span class="fs-1">📭</span>
+            <p class="text-muted mt-2">Không có nhiệm vụ Picking nào.</p>
+        </div>
+    }
+</div>
+
+@{
+    var totalPages = Math.Max(1, (int)Math.Ceiling((double)Model.TotalCount / Model.PageSize));
+}
+
+<nav class="mt-4" aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+        <li class="page-item @(Model.PageIndex <= 1 ? "disabled" : "")">
+            <a class="page-link" asp-action="Picking" asp-route-page="@(Model.PageIndex - 1)">Trước</a>
+        </li>
+        @for (int i = 1; i <= totalPages; i++)
+
+        {
+            <li class="page-item @(i == Model.PageIndex ? "active" : "")">
+                <a class="page-link" asp-action="Picking" asp-route-page="@i">@i</a>
+            </li>
+        }
+        <li class="page-item @(Model.PageIndex >= totalPages ? "disabled" : "")">
+            <a class="page-link" asp-action="Picking" asp-route-page="@(Model.PageIndex + 1)">Tiếp</a>
+        </li>
+    </ul>
+</nav>
+
+<!-- Modal Scan -->
+<div class="modal fade" id="scanModal" tabindex="-1" aria-labelledby="scanModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="scanModalLabel">Quét mã Handheld</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="scanForm">
+                    <input type="hidden" id="modalTaskId" />
+                    <div class="mb-3">
+                        <label class="form-label">Mã nhiệm vụ</label>
+                        <input type="text" class="form-control" id="modalTaskCode" readonly />
+                    </div>
+                    <div class="mb-3">
+                        <label for="barcodeInput" class="form-label">Mã vạch (Barcode)</label>
+                        <input type="text" class="form-control" id="barcodeInput"
+                            placeholder="Quét hoặc nhập mã vạch..." required autocomplete="off" />
+                    </div>
+                </form>
+                <div id="scanResult" class="mt-2 text-center" style="display: none; font-weight: bold;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-success" id="btnSubmitScan">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Khi mở modal, gán dữ liệu vào các input
+            $('#scanModal').on('show.bs.modal', function (event) {
+                var button = $(event.relatedTarget);
+                var taskId = button.data('id');
+                var taskCode = button.data('code');
+
+                var modal = $(this);
+                modal.find('#modalTaskId').val(taskId);
+                modal.find('#modalTaskCode').val(taskCode);
+                modal.find('#barcodeInput').val('');
+                $('#scanResult').hide().removeClass('text-success text-danger').text('');
+            });
+
+            // Focus vào input mã vạch khi modal mở xong
+            $('#scanModal').on('shown.bs.modal', function () {
+                $('#barcodeInput').focus();
+            });
+
+            // Xử lý khi submit form quét mã
+            $('#btnSubmitScan').click(function () {
+                var taskId = $('#modalTaskId').val();
+                var barcode = $('#barcodeInput').val();
+
+                if (!barcode) {
+                    $('#scanResult').text('Vui lòng nhập mã vạch!').removeClass('text-success').addClass('text-danger').show();
+                    return;
+                }
+
+                var btn = $(this);
+                var originalHtml = btn.html();
+                btn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>...').prop('disabled', true);
+
+                // Gửi AJAX POST tới RecordPickingScan
+                $.post('@Url.Action("RecordPickingScan", "Outbound")', { taskId: taskId, barcode: barcode })
+                    .done(function (response) {
+                        if (response.success) {
+                            playBeepSound();
+                            $('#scanResult').removeClass('text-danger').addClass('text-success').text('Quét mã [' + barcode + '] thành công!').show();
+                            $('#barcodeInput').val('').focus();
+                            btn.html(originalHtml).prop('disabled', false);
+                        } else {
+                            $('#scanResult').removeClass('text-success').addClass('text-danger').text('Lỗi: ' + response.message).show();
+                            btn.html(originalHtml).prop('disabled', false);
+                            $('#barcodeInput').focus();
+                        }
+                    })
+                    .fail(function () {
+                        $('#scanResult').removeClass('text-success').addClass('text-danger').text('Lỗi kết nối máy chủ!').show();
+                        btn.html(originalHtml).prop('disabled', false);
+                        $('#barcodeInput').focus();
+                    });
+            });
+
+            // Hàm phát tiếng beep
+            function playBeepSound() {
+                try {
+                    var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    var oscillator = audioCtx.createOscillator();
+                    var gainNode = audioCtx.createGain();
+
+                    oscillator.type = 'sine';
+                    oscillator.frequency.value = 1000; // Tần số beep
+                    
+                    gainNode.gain.setValueAtTime(1, audioCtx.currentTime); 
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+                    
+                    oscillator.start();
+                    setTimeout(function() { 
+                        oscillator.stop(); 
+                    }, 150); // Beep kéo dài 150ms
+                } catch (e) {
+                    console.log('Không hỗ trợ Web Audio API');
+                }
+            }
+
+            // Cho phép nhấn Enter để xác nhận mã vạch
+            $('#barcodeInput').keypress(function (e) {
+                if (e.which == 13) {
+                    e.preventDefault();
+                    $('#btnSubmitScan').click();
+                }
+            });
+        });
+    </script>
+}

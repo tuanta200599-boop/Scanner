@@ -107,7 +107,7 @@
             <span>Cài đặt</span>
         </a>
 
-        <a class="fb-menu-item fb-menu-logout" href="/Account/Logout">
+        <a class="fb-menu-item fb-menu-logout" href="#" onclick="handleLogout(event)">
             <i class="bi bi-box-arrow-right"></i>
             <span>Đăng xuất</span>
         </a>
@@ -245,6 +245,21 @@
                 // Nếu đang mở box thông báo thì bỏ unread sau vài giây (optional)
             };
         });
+
+        // Hàm xử lý Logout để xóa màn hình cũ trước khi chuyển hướng sang tab OIDC của PWA
+        function handleLogout(e) {
+            if (e) e.preventDefault();
+            // Xóa body và hiển thị thông báo đang đăng xuất
+            document.body.innerHTML = `
+                <div style="display:flex; height:100vh; width:100vw; justify-content:center; align-items:center; flex-direction:column; background-color:#f8f9fa;">
+                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+                    <h4 class="mt-4 text-secondary">Đang đăng xuất...</h4>
+                    <p class="text-muted small mt-2">Vui lòng hoàn tất ở cửa sổ đăng nhập</p>
+                </div>
+            `;
+            // Chuyển hướng tới trang Logout
+            window.location.href = '/Account/Logout';
+        }
     </script>
 
 
