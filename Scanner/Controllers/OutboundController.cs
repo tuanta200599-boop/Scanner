@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Scanner.Controllers
 {
-    [Authorize]
+    //[Authorize]
     public class OutboundController : Controller
     {
         private readonly IApiService _apiService;
@@ -80,6 +80,27 @@ namespace Scanner.Controllers
             catch (System.Exception ex)
             {
                 return Json(new { success = false, message = "Lỗi hệ thống: " + ex.Message });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetPickingCount()
+        {
+            try
+            {
+                string endpoint = $"{ApiEndpoints.Outbound.GetPickTaskList}?page=1&pageSize=1";
+                var apiResult = await _apiService.GetAsync<ApiResponse<List<PickTaskItemViewModel>>>(endpoint);
+
+                if (apiResult?.IsSuccess == true)
+                {
+                    return Json(new { count = apiResult.TotalRecords });
+                }
+
+                return Json(new { count = 0 });
+            }
+            catch
+            {
+                return Json(new { count = 0 });
             }
         }
     }

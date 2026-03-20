@@ -39,8 +39,17 @@ namespace Scanner.Services
         {
             if (_httpContextAccessor.HttpContext == null) return;
 
-            var accessToken = await _httpContextAccessor.HttpContext.GetTokenAsync("access_token");
-            Debug.WriteLine(accessToken);
+            string? accessToken = null;
+            try
+            {
+                accessToken = await _httpContextAccessor.HttpContext.GetTokenAsync("access_token");
+                Debug.WriteLine(accessToken);
+            }
+            catch
+            {
+                // Không có authentication scheme (chế độ demo/không có OIDC) — bỏ qua, dùng BearerToken từ config
+            }
+
             if (string.IsNullOrEmpty(accessToken))
             {
                 accessToken = _configuration["ApiSettings:BearerToken"] ?? string.Empty;
@@ -95,6 +104,21 @@ namespace Scanner.Services
             }
 
             var response = await _httpClient.PutAsync(endpoint, contentObj);
+            response.EnsureSuccessStatusCode();
+
+            var content = await response.Content.ReadAsStringAsync();
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                return default;
+            }
+
+            return JsonSerializer.Deserialize<T>(content, _jsonOptions);
+        }
+
+        public async Task<T?> DeleteAsync<T>(string endpoint)
+        {
+            await EnsureAuthorizedAsync();
+            var response = await _httpClient.DeleteAsync(endpoint);
             response.EnsureSuccessStatusCode();
 
             var content = await response.Content.ReadAsStringAsync();

@@ -1,8 +1,137 @@
-﻿@{
+@{
     ViewData["Title"] = "Wms handheld";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with handheld</a>.</p>
+<style>
+    .metro-tile {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        text-decoration: none;
+        padding: 15px;
+        height: 140px;
+        border-radius: 6px;
+        margin-bottom: 15px;
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.2s, opacity 0.2s;
+    }
+
+    .metro-tile:active {
+        transform: scale(0.95);
+    }
+
+    .metro-tile:hover {
+        color: white;
+        opacity: 0.9;
+    }
+
+    .metro-tile .tile-icon {
+        font-size: 3.5rem;
+        margin-bottom: 20px;
+    }
+
+    .metro-tile .tile-title {
+        font-size: 0.95rem;
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        font-weight: 500;
+    }
+
+    .metro-tile .tile-badge {
+        font-size: 1.5rem;
+        font-weight: 700;
+        position: absolute;
+        bottom: 5px;
+        right: 12px;
+    }
+
+    .bg-receiving {
+        background-color: #7B3EBC;
+    }
+
+    /* Purple/Violet */
+    .bg-picking {
+        background-color: #FF1A1A;
+    }
+
+    /* Red */
+    .bg-enquiries {
+        background-color: #29A5D6;
+    }
+
+    /* Light Blue */
+    .bg-barcode {
+        background-color: #FF8C00;
+    }
+
+    /* Orange */
+
+    .home-grid {
+        margin-top: 20px;
+        padding-bottom: 70px;
+        /* Space for the bottom nav bar */
+    }
+</style>
+
+<div class="container-fluid home-grid px-2">
+    <div class="row g-2">
+        <!-- Receiving Tile -->
+        <div class="col-6">
+            <a href="/Inbound" class="metro-tile bg-receiving shadow-sm">
+                <i class="bi bi-truck tile-icon"></i>
+                <span class="tile-title">Receiving</span>
+                <span class="tile-badge" id="receiving-count">...</span>
+            </a>
+        </div>
+
+        <!-- Picking Tile -->
+        <div class="col-6">
+            <a href="/Outbound/Picking" class="metro-tile bg-picking shadow-sm">
+                <i class="bi bi-cart4 tile-icon"></i>
+                <span class="tile-title">Picking</span>
+                <span class="tile-badge" id="picking-count">...</span>
+            </a>
+        </div>
+
+        <!-- Enquiries Tile -->
+        <div class="col-6">
+            <a href="/" class="metro-tile bg-enquiries shadow-sm">
+                <i class="bi bi-search tile-icon"></i>
+                <span class="tile-title">Enquiries</span>
+            </a>
+        </div>
+
+        <!-- Barcode Generate Tile -->
+        <div class="col-6">
+            <a href="/" class="metro-tile bg-barcode shadow-sm">
+                <i class="bi bi-upc-scan tile-icon"></i>
+                <span class="tile-title">Barcode Generate</span>
+            </a>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            function updateOverviewCounts() {
+                fetch('/Inbound/GetReceivingCount')
+                    .then(r => r.json())
+                    .then(data => $('#receiving-count').text(data.count))
+                    .catch(err => $('#receiving-count').text('-'));
+
+                fetch('/Outbound/GetPickingCount')
+                    .then(r => r.json())
+                    .then(data => $('#picking-count').text(data.count))
+                    .catch(err => $('#picking-count').text('-'));
+            }
+
+            // Initial fetch
+            updateOverviewCounts();
+        });
+    </script>
+}

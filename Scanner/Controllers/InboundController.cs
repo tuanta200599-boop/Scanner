@@ -6,7 +6,7 @@ using Scanner.Services;
 
 namespace Scanner.Controllers
 {
-    [Authorize]
+    //[Authorize]
     public class InboundController : Controller
     {
         private readonly IApiService _apiService;
@@ -164,11 +164,11 @@ namespace Scanner.Controllers
                     StatusReciept = "New"
                 };
 
-                var apiResult = await _apiService.PostAsync<ApiResponse<object>>(ApiEndpoints.Inbound.ScanHandheld, requestPayload);
+                var apiResult = await _apiService.PostAsync<ApiResponse<ScanHandheldResult>>(ApiEndpoints.Inbound.ScanHandheld, requestPayload);
 
                 if (apiResult != null && apiResult.IsSuccess)
                 {
-                    return Json(new { success = true, message = $"Đã quét thành công SKU {skuId} vào Pallet {palletCode}." });
+                    return Json(new { success = true, message = $"Đã quét thành công SKU {skuId} vào Pallet {palletCode}.", asnLineId = apiResult.Data?.AsnLineId });
                 }
 
                 return Json(new { success = false, message = apiResult?.Message ?? "Lỗi từ máy chủ khi lưu mã quét." });
@@ -200,6 +200,104 @@ namespace Scanner.Controllers
                 }
 
                 return Json(new { success = false, message = apiResult?.Message ?? "Lỗi từ máy chủ khi cập nhật Pallet." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Lỗi hệ thống: " + ex.Message });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetScanHistory(int asnId, string palletCode)
+        {
+            try
+            {
+                string endpoint = $"{ApiEndpoints.Inbound.GetHistoryScan}?asnId={asnId}&palletCode={Uri.EscapeDataString(palletCode)}";
+                var apiResult = await _apiService.GetAsync<ApiResponse<List<ScanHistoryItemViewModel>>>(endpoint);
+
+                if (apiResult?.IsSuccess == true && apiResult.Data != null)
+                {
+                    return Json(new { success = true, data = apiResult.Data });
+                }
+
+                return Json(new { success = true, data = new List<object>() });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpDelete]
+        public async Task<IActionResult> DeleteAsnLine(int id)
+        {
+            try
+            {
+                string endpoint = $"{ApiEndpoints.Inbound.DeleteAsnLine}?id={id}";
+                var apiResult = await _apiService.DeleteAsync<ApiResponse<object>>(endpoint);
+
+                if (apiResult != null && apiResult.IsSuccess)
+                {
+                    return Json(new { success = true });
+                }
+
+                return Json(new { success = false, message = apiResult?.Message ?? "Lỗi từ máy chủ khi xóa." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Lỗi hệ thống: " + ex.Message });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetReceivingCount()
+        {
+            try
+            {
+                string endpoint = $"{ApiEndpoints.Inbound.GetAsnList}?page=1&pageSize=1";
+                var apiResult = await _apiService.GetAsync<ApiResponse<List<AsnItemViewModel>>>(endpoint);
+                
+                if (apiResult?.IsSuccess == true)
+                {
+                    return Json(new { count = apiResult.TotalRecords });
+                }
+                
+                return Json(new { count = 0 });
+            }
+            catch
+            {
+                return Json(new { count = 0 });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetLpnCount()
+        {
+            try
+            {
+                string endpoint = $"{ApiEndpoints.Inbound.GetLpnList}?page=1&pageSize=1";
+                var apiResult = await _apiService.GetAsync<ApiResponse<List<object>>>(endpoint);
+                return Json(new { totalRecords = apiResult?.TotalRecords ?? 0 });
+            }
+            catch
+            {
+                return Json(new { totalRecords = 0 });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CreateLpn([FromBody] CreateLpnRequest request)
+        {
+            try
+            {
+                var apiResult = await _apiService.PostAsync<ApiResponse<object>>(ApiEndpoints.Inbound.CreateLpn, request);
+
+                if (apiResult != null && apiResult.IsSuccess)
+                {
+                    return Json(new { success = true, message = apiResult.Message });
+                }
+
+                return Json(new { success = false, message = apiResult?.Message ?? "Lỗi từ máy chủ khi tạo LPN." });
             }
             catch (Exception ex)
             {

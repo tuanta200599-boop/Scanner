@@ -16,8 +16,8 @@
     {
         <input type="hidden" name="asnId" value="@Model.AsnId" />
     }
-    <input type="text" name="palletCode" id="palletSearchInput" class="form-control" placeholder="🔍 Nhập mã Pallet để tìm..."
-        value="@Model.SearchPalletCode" autofocus />
+    <input type="text" name="palletCode" id="palletSearchInput" class="form-control"
+        placeholder="🔍 Nhập mã Pallet để tìm..." value="@Model.SearchPalletCode" autofocus />
     <button type="submit" class="btn btn-primary">Tìm</button>
     @if (!string.IsNullOrEmpty(Model.SearchPalletCode))
     {
@@ -74,8 +74,8 @@
         @for (int i = 1; i <= totalPages; i++)
         {
             <li class="page-item @(i == Model.PageIndex ? "active" : "")">
-                <a class="page-link" asp-action="Putaway" asp-route-page="@i"
-                    asp-route-palletCode="@Model.SearchPalletCode" asp-route-asnId="@Model.AsnId">@i</a>
+                <a class="page-link" asp-action="Putaway" asp-route-page="@i" asp-route-palletCode="@Model.SearchPalletCode"
+                    asp-route-asnId="@Model.AsnId">@i</a>
             </li>
         }
         <li class="page-item @(Model.PageIndex >= totalPages ? "disabled" : "")">
@@ -92,10 +92,12 @@
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title">
-                    <i class="bi bi-upc-scan me-2"></i> Quét vào: 
+                    <i class="bi bi-upc-scan me-2"></i> Quét vào:
                     @if (Model.AsnId.HasValue)
                     {
-                        <strong class="text-info">@Model.AsnId</strong><span> - </span>
+                        <strong class="text-info">@Model.AsnId</strong>
+
+                        <span> - </span>
                     }
                     <strong id="modalPalletCode" class="text-warning"></strong>
                 </h5>
@@ -107,7 +109,7 @@
                 <div class="card shadow-sm mb-3 border-0">
                     <div class="card-body text-center p-4">
                         <label for="barcodeInput" class="form-label fs-5 fw-bold text-muted mb-3">Sẵn sàng quét mã
-                            (AsnId-SkuId)</label>
+                            (SkuId-BoxId)</label>
                         <input type="text" id="barcodeInput"
                             class="form-control form-control-lg text-center fw-bold fs-3"
                             placeholder="Tít mã vạch vào đây..." autocomplete="off">
@@ -116,19 +118,33 @@
                 </div>
 
                 <div class="flex-grow-1 overflow-auto">
+                    @* cái này lấy từ db về *@
                     <h6 class="text-muted fw-bold mb-2">Lịch sử quét:</h6>
                     <ul id="scanHistoryList" class="list-group list-group-flush rounded shadow-sm">
                         <!-- Lịch sử quét chèn vào đây bởi JS -->
                     </ul>
                 </div>
+                @* thêm nút tạo pallet ở đây *@
+                <div class="mt-3 pb-1">
+                    <button type="button"
+                        class="btn btn-success btn-lg w-100 rounded-pill shadow-sm d-flex align-items-center justify-content-center gap-2"
+                        id="btnCreateLpn" onclick="createLpn()">
+                        <i class="bi bi-plus-circle-fill fs-5"></i>
+                        <span class="fw-semibold">Tạo LPN (Pallet mới)</span>
+                    </button>
+                </div>
+
             </div>
         </div>
     </div>
 </div>
 
+
+
 @section Scripts {
     <script>
         var currentPalletCode = '';
+        var currentAsnId = @(Model.AsnId.HasValue ? Model.AsnId.Value.ToString() : "0");
         var scanModal = null;
         var barcodeInput = document.getElementById('barcodeInput');
         var isProcessing = false;
@@ -172,7 +188,8 @@
 
             // Clear input and history for new session
             barcodeInput.value = '';
-            document.getElementById('scanHistoryList').innerHTML = '';
+            var historyList = document.getElementById('scanHistoryList');
+            historyList.innerHTML = '<li class="list-group-item text-center text-muted py-3"><div class="spinner-border spinner-border-sm me-2" role="status"></div>Đang tải lịch sử...</li>';
 
             // Update pallet to inactive (IsActive = false)
             $.ajax({
@@ -188,6 +205,29 @@
                     console.error('Lỗi kết nối khi cập nhật trạng thái Pallet.');
                 }
             });
+
+            // Load scan history for this pallet + asn
+            var asnId = @(Model.AsnId.HasValue ? Model.AsnId.Value.ToString() : "0");
+            fetch(`/Inbound/GetScanHistory?asnId=${asnId}&palletCode=${encodeURIComponent(palletCode)}`)
+                .then(r => r.json())
+                .then(result => {
+                    historyList.innerHTML = '';
+                    if (result.success && result.data && result.data.length > 0) {
+                        // Render newest first (API trả về ascending, ta reverse)
+                        result.data.slice().reverse().forEach(function (item) {
+                            var timeString = item.createdDate
+                                ? new Date(item.createdDate).toLocaleTimeString('vi-VN', { hour12: false })
+                                : '';
+                            var message = `Đã quét thành công SKU ${item.skuId} vào Pallet ${item.palletCode}`;
+                            addHistoryItem(`SKU-${item.skuId}`, true, message, timeString, item.asnLineId);
+                        });
+                    } else {
+                        historyList.innerHTML = '<li class="list-group-item text-center text-muted py-3">Chưa có lịch sử quét.</li>';
+                    }
+                })
+                .catch(function () {
+                    historyList.innerHTML = '<li class="list-group-item text-center text-danger py-3">Không thể tải lịch sử quét.</li>';
+                });
 
             scanModal.show();
         }
@@ -205,15 +245,15 @@
                 data: { barcode: barcode, palletCode: currentPalletCode, asnId: '@Model.AsnId' },
                 success: function (response) {
                     if (response.success) {
-                        addHistoryItem(barcode, true, response.message);
+                        addHistoryItem(barcode, true, response.message, null, response.asnLineId);
                         playSuccessBeep();
                     } else {
-                        addHistoryItem(barcode, false, response.message);
+                        addHistoryItem(barcode, false, response.message, null, -1);
                         playErrorBeep();
                     }
                 },
                 error: function () {
-                    addHistoryItem(barcode, false, "Lỗi kết nối máy chủ / Mất mạng.");
+                    addHistoryItem(barcode, false, "Lỗi kết nối máy chủ / Mất mạng.", null, -1);
                     playErrorBeep();
                 },
                 complete: function () {
@@ -226,29 +266,137 @@
             });
         }
 
-        function addHistoryItem(code, isSuccess, message) {
+        function addHistoryItem(code, isSuccess, message, timeOverride, asnLineId) {
             var list = document.getElementById('scanHistoryList');
-            var timeString = new Date().toLocaleTimeString('vi-VN', { hour12: false });
+            var timeString = timeOverride || new Date().toLocaleTimeString('vi-VN', { hour12: false });
 
             var iconHtml = isSuccess ? '<i class="bi bi-check-circle-fill text-success fs-4"></i>' : '<i class="bi bi-x-circle-fill text-danger fs-4"></i>';
             var borderClass = isSuccess ? 'border-success' : 'border-danger';
             var bgClass = isSuccess ? 'bg-success-subtle' : 'bg-danger-subtle';
 
+            // Nút xóa: 3 trường hợp
+            var deleteBtn;
+            if (asnLineId > 0) {
+                // Có asnLineId → gọi API xóa trong DB
+                deleteBtn = `<button class="btn btn-sm btn-outline-danger border-0 px-2 py-0 ms-1" title="Xóa" onclick="deleteAsnLine(${asnLineId}, this)">
+                    <i class="bi bi-trash3"></i>
+                </button>`;
+            } else if (asnLineId === -1) {
+                // Bản ghi lỗi → chỉ xóa khỏi UI
+                deleteBtn = `<button class="btn btn-sm btn-outline-secondary border-0 px-2 py-0 ms-1" title="Bỏ qua" onclick="this.closest('li').remove()">
+                    <i class="bi bi-x-lg"></i>
+                </button>`;
+            } else {
+                deleteBtn = '';
+            }
+
             var li = document.createElement('li');
             li.className = `list-group-item d-flex align-items-center gap-3 ${borderClass} border-start border-4 mb-2 ${bgClass}`;
             li.innerHTML = `
-                                                                        ${iconHtml}
-                                                                        <div class="flex-grow-1">
-                                                                            <div class="d-flex justify-content-between">
-                                                                                <strong class="fs-5">${code}</strong>
-                                                                                <small class="text-muted">${timeString}</small>
-                                                                            </div>
-                                                                            <div class="text-muted small">${message}</div>
-                                                                        </div>
-                                                                    `;
+                ${iconHtml}
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <strong class="fs-5">${code}</strong>
+                        <div class="d-flex align-items-center gap-1">
+                            <small class="text-muted">${timeString}</small>
+                            ${deleteBtn}
+                        </div>
+                    </div>
+                    <div class="text-muted small">${message}</div>
+                </div>
+            `;
 
-            // Chèn lên đầu danh sách
+            // Ghi nhớ asnLineId trên element để createLpn() có thể thu thập
+            if (asnLineId > 0) li.dataset.asnlineId = asnLineId;
+
+            // Chỉn lên đầu danh sách
             list.insertBefore(li, list.firstChild);
+        }
+
+        function deleteAsnLine(asnLineId, btn) {
+            if (!confirm('Bạn có muốn xóa bản ghi quét này không?')) return;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+            fetch(`/Inbound/DeleteAsnLine?id=${asnLineId}`, { method: 'DELETE' })
+                .then(r => r.json())
+                .then(result => {
+                    if (result.success) {
+                        // Xóa dòng <li> chứa nút
+                        var li = btn.closest('li');
+                        li.style.transition = 'opacity 0.3s';
+                        li.style.opacity = '0';
+                        setTimeout(() => li.remove(), 300);
+                    } else {
+                        alert('Không thể xóa: ' + (result.message || 'Lỗi máy chủ.'));
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="bi bi-trash3"></i>';
+                    }
+                })
+                .catch(function () {
+                    alert('Lỗi kết nối khi xóa bản ghi.');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-trash3"></i>';
+                });
+        }
+
+        async function createLpn() {
+            // 1. Thu thập asnLineIds từ các dòng đã quét thành công
+            var ids = [...document.querySelectorAll('#scanHistoryList li[data-asnline-id]')]
+                        .map(li => parseInt(li.dataset.asnlineId))
+                        .filter(id => id > 0);
+
+            if (ids.length === 0) {
+                alert('Chưa có bản ghi quét hợp lệ để tạo LPN.');
+                return;
+            }
+
+            // Hiển thị trạng thái loading trên nút
+            var btn = document.getElementById('btnCreateLpn');
+            var originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Đang tạo LPN...';
+
+            try {
+                // 2. Lấy tổng số LPN hiện có để tính lpnCode
+                var countRes = await fetch('/Inbound/GetLpnCount').then(r => r.json());
+                var nextNum = (countRes.totalRecords ?? 0) + 1;
+
+                // 3. Tạo lpnCode: {n}-{ddMMMMyyy}
+                var now = new Date();
+                var dd   = String(now.getDate()).padStart(2, '0');
+                var mm   = String(now.getMonth() + 1).padStart(2, '0');
+                var yyyy = now.getFullYear();
+                var lpnCode = `${nextNum}-${dd}${mm}${yyyy}`;
+
+                // 4. Gọi API tạo LPN
+                var payload = {
+                    lpnCode:    lpnCode,
+                    lpnLevel:   "1",
+                    qty:        ids.length,
+                    status:     "New",
+                    asnLineIds: ids
+                };
+
+                var createRes = await fetch('/Inbound/CreateLpn', {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify(payload)
+                }).then(r => r.json());
+
+                if (createRes.success) {
+                    // 5. Quay về màn hình chọn Pallet theo asnId
+                    window.location.href = `/Inbound/Putaway?asnId=${currentAsnId}`;
+                } else {
+                    alert('Tạo LPN thất bại: ' + (createRes.message || 'Lỗi không xác định.'));
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                }
+            } catch (e) {
+                alert('Lỗi kết nối khi tạo LPN.');
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
         }
 
         // AudioContext for the Web Audio API

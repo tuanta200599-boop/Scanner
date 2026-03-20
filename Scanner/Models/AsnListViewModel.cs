@@ -30,4 +30,29 @@ namespace Scanner.Models
         public T? Data { get; set; }
         public int TotalRecords { get; set; }
     }
+
+    public class ScanHistoryItemViewModel
+    {
+        public int AsnLineId { get; set; }
+        public int AsnId { get; set; }
+        public int SkuId { get; set; }
+        public string PalletCode { get; set; } = string.Empty;
+        public int ExpectedQty { get; set; }
+        public string StatusReciept { get; set; } = string.Empty;
+        public DateTime? CreatedDate { get; set; }
+    }
+
+    public class ScanHandheldResult
+    {
+        public int AsnLineId { get; set; }
+    }
+
+    public class CreateLpnRequest
+    {
+        public string LpnCode { get; set; } = string.Empty;
+        public string LpnLevel { get; set; } = "1";
+        public int Qty { get; set; }
+        public string Status { get; set; } = "New";
+        public List<int> AsnLineIds { get; set; } = new();
+    }
 }

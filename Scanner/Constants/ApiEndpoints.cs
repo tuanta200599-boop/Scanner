@@ -7,6 +7,10 @@ namespace Scanner.Constants
             public const string GetAsnList = "Inbound/Asn/GetList";
             public const string UpdateExpressStatus = "Inbound/Asn/UpdateExpressStatus";
             public const string ScanHandheld = "Inbound/Asn_Line/Scan-Handheld";
+            public const string GetHistoryScan = "Inbound/Asn_Line/GetHistoryScan";
+            public const string DeleteAsnLine = "Inbound/Asn_Line/Delete";
+            public const string GetLpnList  = "Inbound/Lpn/GetList";
+            public const string CreateLpn   = "Inbound/Lpn/Create";
         }
 
         public static class Configuration
