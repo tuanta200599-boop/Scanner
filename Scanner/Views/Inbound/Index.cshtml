@@ -44,22 +44,27 @@
 
                         <hr class="my-2" />
 
-                        <div class="row mb-3">
-                            <div class="col-6">
-                                <small class="text-muted d-block">Cửa nhập (Dock)</small>
-                                <span class="badge bg-info text-dark fs-6">@item.DockCode</span>
+                        <div class="row g-1 mb-3 text-center">
+                            <div class="col-4 text-start">
+                                <small class="text-muted d-block text-truncate" style="font-size: 0.75rem;">Cửa nhập
+                                    (Dock)</small>
+                                <span class="badge bg-info text-dark">@item.DockCode</span>
                             </div>
-                            <div class="col-6 text-end">
-                                <small class="text-muted d-block">Số lượng SKU</small>
+                            <div class="col-4">
+                                <small class="text-muted d-block text-truncate" style="font-size: 0.75rem;">SKU dự kiến</small>
                                 <span class="fw-bold fs-6">@item.NumOfSku</span>
+                            </div>
+                            <div class="col-4 text-end">
+                                <small class="text-muted d-block text-truncate" style="font-size: 0.75rem;">Thực nhận</small>
+                                <span class="fw-bold text-success fs-6">@(item.ActualQty ?? 0)</span>
                             </div>
                         </div>
 
-                        @if (item.Status.Equals("Receipt", StringComparison.OrdinalIgnoreCase) || item.Status.Equals("Reciept",
-                       StringComparison.OrdinalIgnoreCase))
+                        @if (item.Status.Equals("Receipt", StringComparison.OrdinalIgnoreCase) || item.Status.Equals("Reciept", StringComparison.OrdinalIgnoreCase))
                         {
-                            <a href="@Url.Action("Putaway", "Inbound", new { asnId = item.AsnId })" class="btn btn-primary w-100 fw-bold py-2">
-                                📦 Chọn pallet
+                            <a href="@Url.Action("Putaway", "Inbound", new { asnId = item.AsnId })"
+                                class="btn btn-primary w-100 fw-bold py-2">
+                                📦 Chọn Pallet
                             </a>
                         }
                         else
@@ -108,36 +113,121 @@
     </ul>
 </nav>
 
+<!-- Modal Báo Xe Đã Tới -->
+<div class="modal fade" id="arrivalModal" tabindex="-1" aria-labelledby="arrivalModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="arrivalModalLabel">Xác nhận Xe đã tới</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="arrivalForm">
+                    <input type="hidden" id="modalAsnId" />
+                    <div class="mb-3">
+                        <label for="actualQty" class="form-label fw-bold">Số lượng hàng thực nhận</label>
+                        <input type="number" class="form-control form-control-lg" id="actualQty" name="actualQty"
+                            placeholder="Nhập số lượng..." step="any" min="0">
+                    </div>
+                    <div class="mb-3">
+                        <label for="actualTemp" class="form-label fw-bold">Nhiệt độ lúc nhận (°C)</label>
+                        <input type="text" class="form-control form-control-lg" id="actualTemp" name="actualTemp"
+                            placeholder="Nhập nhiệt độ (nếu có)...">
+                    </div>
+                    <div class="mb-3 text-danger small fw-bold" id="validationError" style="display: none;">
+                        ⚠️ Vui lòng nhập đầy đủ Số lượng và Nhiệt độ!
+                    </div>
+                </form>
+                <div class="alert alert-info py-2 small mb-0">
+                    <i class="bi bi-info-circle me-1"></i> Xác nhận xe <strong id="modalVehicleNo"></strong> đã tới bãi
+                    và ghi nhận thông số.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-success px-4 fw-bold" id="btnConfirmArrival">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
         $(document).ready(function () {
+            var currentBtn = null;
+            var arrivalModal = new bootstrap.Modal(document.getElementById('arrivalModal'));
+
             $('.btn-arrive').click(function () {
-                var btn = $(this);
-                var id = btn.data('id');
-                var vehicle = btn.data('vehicle');
+                currentBtn = $(this);
+                var id = currentBtn.data('id');
+                var vehicle = currentBtn.data('vehicle');
 
-                if (confirm('Xác nhận xe ' + vehicle + ' đã tới bãi?')) {
-                    var originalHtml = btn.html();
-                    btn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang xử lý...').prop('disabled', true);
+                $('#modalAsnId').val(id);
+                $('#modalVehicleNo').text(vehicle);
+                $('#actualQty').val('').removeClass('is-invalid');
+                $('#actualTemp').val('').removeClass('is-invalid');
+                $('#validationError').hide();
 
-                    $.post('@Url.Action("UpdateStatus", "Inbound")', { id: id })
-                        .done(function (response) {
-                            if (response.success) {
-                                // Change button appearance
-                                btn.removeClass('btn-success').addClass('btn-secondary').html('✔️ Đã cập nhật');
+                arrivalModal.show();
+            });
 
-                                // Show time
-                                $('#time-' + id).text('Time: ' + response.timestamp).slideDown();
-                            } else {
-                                alert('Lỗi: ' + response.message);
-                                btn.html(originalHtml).prop('disabled', false);
-                            }
-                        })
-                        .fail(function () {
-                            alert('Không kết nối được với máy chủ để cập nhật!');
-                            btn.html(originalHtml).prop('disabled', false);
-                        });
+            $('#btnConfirmArrival').click(function () {
+                if (!currentBtn) return;
+
+                var id = $('#modalAsnId').val();
+                var actualQty = $('#actualQty').val();
+                var actualTemp = $('#actualTemp').val();
+
+                // Validation
+                if (!actualQty || !actualTemp) {
+                    $('#validationError').slideDown();
+
+                    // Highlight empty fields
+                    if (!actualQty) $('#actualQty').addClass('is-invalid');
+                    else $('#actualQty').removeClass('is-invalid');
+
+                    if (!actualTemp) $('#actualTemp').addClass('is-invalid');
+                    else $('#actualTemp').removeClass('is-invalid');
+
+                    return;
                 }
+
+                // Clear validation errors
+                $('#validationError').hide();
+                $('.is-invalid').removeClass('is-invalid');
+
+                var originalHtml = currentBtn.html();
+                currentBtn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang xử lý...').prop('disabled', true);
+
+                $('#btnConfirmArrival').prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status"></span>');
+
+                $.post('@Url.Action("UpdateStatus", "Inbound")', {
+                    id: id,
+                    actualQty: actualQty,
+                    actualTemp: actualTemp
+                })
+                    .done(function (response) {
+                        arrivalModal.hide();
+                        if (response.success) {
+                            // Change button appearance
+                            currentBtn.removeClass('btn-success').addClass('btn-secondary').html('✔️ Đã cập nhật');
+
+                            // Show time
+                            $('#time-' + id).text('Time: ' + response.timestamp).slideDown();
+                        } else {
+                            alert('Lỗi: ' + response.message);
+                            currentBtn.html(originalHtml).prop('disabled', false);
+                        }
+                    })
+                    .fail(function () {
+                        arrivalModal.hide();
+                        alert('Không kết nối được với máy chủ để cập nhật!');
+                        currentBtn.html(originalHtml).prop('disabled', false);
+                    })
+                    .always(function () {
+                        $('#btnConfirmArrival').prop('disabled', false).text('Xác nhận');
+                    });
             });
         });
     </script>

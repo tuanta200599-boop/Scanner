@@ -19,6 +19,8 @@ namespace Scanner.Models
         public string RouteCode { get; set; } = string.Empty;
         public string DockCode { get; set; } = string.Empty;
         public int NumOfSku { get; set; }
+        public decimal? ActualQty { get; set; }
+        public string? ActualTemp { get; set; }
         public string Status { get; set; } = string.Empty;
     }
 

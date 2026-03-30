@@ -53,16 +53,26 @@ namespace Scanner.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> UpdateStatus(int id)
+        public async Task<IActionResult> UpdateStatus(int id, decimal? actualQty, string? actualTemp)
         {
             try
             {
                 // Gọi API PUT UpdateExpressStatus.
-                // Tuỳ vào backend yêu cầu query string hay body, truyền asnId lên server WCS.
+                // Truyền các tham số qua query string vì backend có thể chỉ nhận từ đây.
                 string endpoint = $"{ApiEndpoints.Inbound.UpdateExpressStatus}?asnId={id}";
+                
+                if (actualQty.HasValue)
+                {
+                    endpoint += $"&actualQty={actualQty}";
+                }
+                
+                if (!string.IsNullOrEmpty(actualTemp))
+                {
+                    endpoint += $"&actualTemp={Uri.EscapeDataString(actualTemp)}";
+                }
 
-                // Gửi PUT request. Pass new { asnId = id } as body for foolproof binding.
-                var apiResult = await _apiService.PutAsync<ApiResponse<object>>(endpoint, new { asnId = id });
+                // Gửi PUT request.
+                var apiResult = await _apiService.PutAsync<ApiResponse<object>>(endpoint, null);
 
                 if (apiResult != null && apiResult.IsSuccess)
                 {

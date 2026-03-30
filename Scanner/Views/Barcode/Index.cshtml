@@ -1,0 +1,293 @@
+@model Scanner.Models.SkuBarcodeListViewModel
+
+@{
+    ViewData["Title"] = "Barcode Generate";
+}
+
+<div class="mb-3">
+    <h4><i class="bi bi-upc-scan me-2"></i> Barcode Generate</h4>
+</div>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger" role="alert">
+        @Html.ValidationSummary(false, "", new { @class = "mb-0" })
+    </div>
+}
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center fw-bold py-2">
+        <span>Lịch sử yêu cầu in</span>
+        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#printBarcodeModal">
+            <i class="bi bi-printer-fill me-1"></i> Print barcode
+        </button>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">SKU</th>
+                        <th class="text-center">Số lượng</th>
+                        <th>Trạng thái</th>
+                        <th class="text-center">Thời gian</th>
+                        <th class="text-end pe-3">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Items != null && Model.Items.Any())
+                    {
+                        foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td class="ps-3 fw-bold text-primary">@item.ExternalBarcode</td>
+                                <td class="text-center font-monospace">@item.LabelQty</td>
+                                <td>
+                                    <span class="badge @(item.PrintStatus == "Printed" ? "bg-success" : "bg-warning text-dark")">
+                                        @item.PrintStatus
+                                    </span>
+                                </td>
+                                <td class="text-center text-muted small">
+                                    @(item.CreatedDate?.ToString("dd/MM HH:mm") ?? "-")
+                                </td>
+                                <td class="text-end pe-3">
+                                    <button class="btn btn-outline-primary btn-sm btn-reprint" 
+                                            data-sku="@item.ExternalBarcode" 
+                                            data-qty="@item.LabelQty"
+                                            title="In lại">
+                                        <i class="bi bi-printer"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-muted">
+                                <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                Chưa có yêu cầu in nào
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination (Simplified) -->
+@if (Model.TotalCount > Model.PageSize)
+{
+    var totalPages = (int)Math.Ceiling((double)Model.TotalCount / Model.PageSize);
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            <li class="page-item @(Model.PageIndex <= 1 ? "disabled" : "")">
+                <a class="page-link" href="@Url.Action("Index", new { page = Model.PageIndex - 1 })">Trước</a>
+            </li>
+            <li class="page-item active"><a class="page-link" href="#">@Model.PageIndex</a></li>
+            <li class="page-item @(Model.PageIndex >= totalPages ? "disabled" : "")">
+                <a class="page-link" href="@Url.Action("Index", new { page = Model.PageIndex + 1 })">Tiếp</a>
+            </li>
+        </ul>
+    </nav>
+}
+
+<!-- Modal Print Barcode -->
+<div class="modal fade" id="printBarcodeModal" tabindex="-1" aria-labelledby="printBarcodeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="printBarcodeModalLabel"><i class="bi bi-printer-fill me-2"></i> In Barcode SKU</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="printBarcodeForm">
+                    <div class="mb-3">
+                        <label for="skuSelect" class="form-label fw-bold">Chọn SKU</label>
+                        <select class="form-select form-control-lg" id="skuSelect" style="width: 100%;" required>
+                            <option value="">Đang tải danh sách SKU...</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="labelQty" class="form-label fw-bold">Số lượng tem</label>
+                        <input type="number" class="form-control form-control-lg" id="labelQty" value="1" min="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="printerSelect" class="form-label fw-bold">Chọn máy in</label>
+                        <select class="form-select form-control-lg" id="printerSelect" style="width: 100%;" required>
+                            <option value="">Đang tải danh sách máy in...</option>
+                        </select>
+                    </div>
+
+                    <div id="printError" class="alert alert-danger py-2 small" style="display: none;"></div>
+                </form>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary px-4 fw-bold" id="btnSubmitPrint">
+                    <i class="bi bi-check-circle me-1"></i> Xác nhận in
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            const SKU_LIST_API = '@Url.Action("GetSkuList", "Barcode")?page=1&pageSize=100';
+            const PRINTER_LIST_API = '@Url.Action("GetPrinterDriverList", "Barcode")';
+            const PRINTER_API = '@Url.Action("Printer", "Barcode")';
+
+            // Initialize Select2
+            $('#skuSelect').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Tìm kiếm mã hoặc tên SKU...',
+                allowClear: true,
+                dropdownParent: $('#printBarcodeModal')
+            });
+
+            $('#printerSelect').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Chọn máy in...',
+                allowClear: true,
+                dropdownParent: $('#printBarcodeModal')
+            });
+
+
+            // Fetch SKU List
+            function loadSkuList() {
+                $.ajax({
+                    url: SKU_LIST_API,
+                    type: 'GET',
+                    success: function (res) {
+                        if (res.isSuccess && res.data) {
+                            var $select = $('#skuSelect');
+                            $select.empty().append('<option value=""></option>');
+                            
+                            res.data.forEach(function (item) {
+                                var option = new Option(`${item.skuCode} - ${item.skuName}`, item.skuCode, false, false);
+                                $select.append(option);
+                            });
+                            $select.trigger('change');
+                        }
+                    }
+                });
+            }
+
+
+            // Fetch Printer List
+
+            function loadPrinterList() {
+                $.ajax({
+                    url: PRINTER_LIST_API,
+                    type: 'GET',
+                    success: function (res) {
+                        if (res.isSuccess && res.data) {
+                            var $select = $('#printerSelect');
+                            $select.empty().append('<option value=""></option>');
+                            
+                            res.data.forEach(function (item) {
+                                // Store printer name as data attribute for easy retrieval
+                                var option = new Option(item.name, item.deviceId, false, item.default);
+                                $(option).data('printer-name', item.name);
+                                $select.append(option);
+                            });
+                            $select.trigger('change');
+                        }
+                    }
+                });
+            }
+
+            // Load lists on page load
+            loadSkuList();
+            loadPrinterList();
+
+
+            // Handle row Print button (Reprint)
+            $('.btn-reprint').click(function() {
+                var sku = $(this).data('sku');
+                var qty = $(this).data('qty');
+                
+                // Set value and trigger change for Select2
+                if ($('#skuSelect').find("option[value='" + sku + "']").length) {
+                    $('#skuSelect').val(sku).trigger('change');
+                } else {
+                    // If SKU not in current dropdown, add it temporarily
+                    var newOption = new Option(sku, sku, true, true);
+                    $('#skuSelect').append(newOption).trigger('change');
+                }
+                
+                $('#labelQty').val(qty);
+                $('#printBarcodeModal').modal('show');
+            });
+
+            $('#btnSubmitPrint').click(function () {
+                var sku = $('#skuSelect').val();
+                var qty = $('#labelQty').val();
+                var printerId = $('#printerSelect').val();
+                var printerName = $('#printerSelect').find(':selected').data('printer-name');
+
+                if (!sku || !qty || qty <= 0 || !printerId) {
+                    $('#printError').text('Vui lòng chọn đầy đủ SKU, số lượng và máy in!').show();
+                    return;
+                }
+
+                $('#printError').hide();
+                var btn = $(this);
+                btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Đang in...');
+
+                var payload = {
+                    skuCode: sku,
+                    labelQty: parseInt(qty),
+                    "driver-printer-id": printerId,
+                    "driver-printer-name": printerName
+                };
+
+
+                $.ajax({
+                    url: PRINTER_API,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(payload),
+                    success: function (response) {
+                        // Assuming response format might be similar to SKU list or just success flag
+                        if (response.isSuccess || response.success || response.code === 200) {
+                            $('#printBarcodeModal').modal('hide');
+                            alert('Yêu cầu in đã được gửi thành công!');
+                            location.reload();
+                        } else {
+                            $('#printError').text(response.message || 'Lỗi từ máy in!').show();
+                            btn.prop('disabled', false).html('<i class="bi bi-check-circle me-1"></i> Xác nhận in');
+                        }
+                    },
+                    error: function (xhr) {
+                        var errorMsg = 'Lỗi kết nối máy in!';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMsg = xhr.responseJSON.message;
+                        }
+                        $('#printError').text(errorMsg).show();
+                        btn.prop('disabled', false).html('<i class="bi bi-check-circle me-1"></i> Xác nhận in');
+                    }
+                });
+            });
+
+            // Reset modal on close
+            $('#printBarcodeModal').on('hidden.bs.modal', function () {
+                $('#skuSelect').val(null).trigger('change');
+                // Don't reset printer on every close to keep user's last selection
+                $('#labelQty').val(1);
+                $('#printError').hide();
+                $('#btnSubmitPrint').prop('disabled', false).html('<i class="bi bi-check-circle me-1"></i> Xác nhận in');
+            });
+
+        });
+    </script>
+
+}

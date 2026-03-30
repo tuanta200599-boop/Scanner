@@ -17,7 +17,14 @@ namespace Scanner.Constants
         {
             public const string GetPalletList = "Configuration/Pallet/GetList";
             public const string UpdatePallet = "Configuration/Pallet/Update";
+            public const string CreateSkuBarcode = "Configuration/SkuBarcode/Create";
+            public const string GetSkuBarcodeList = "Configuration/SkuBarcode/GetList";
+            public const string GetSkuList = "Configuration/Sku/GetList";
+            public const string GetPrinterDriverList = "Configuration/PrinterDriver/GetList";
+            public const string Printer = "Configuration/PrinterDriver/Printer";
         }
+
+
         public static class Outbound
         {
             public const string GetPickTaskList = "Outbound/ListPickTask";
