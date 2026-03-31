@@ -9,7 +9,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient<Scanner.Services.IApiService, Scanner.Services.ApiService>();
-
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo("/keys"))
+    .SetApplicationName("pwa-app");
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
@@ -80,13 +82,13 @@ builder.Services.AddAuthentication(options =>
             Console.WriteLine("Method: " + context.Request.Method);
             Console.WriteLine("Path: " + context.Request.Path);
             Console.WriteLine("Failure: " + context.Failure?.Message);
-            
+
             if (context.Request.Query.Count > 0)
             {
                 foreach (var param in context.Request.Query)
                     Console.WriteLine($"Query: {param.Key} = {param.Value}");
             }
-            
+
             if (context.Request.HasFormContentType)
             {
                 foreach (var param in context.Request.Form)
