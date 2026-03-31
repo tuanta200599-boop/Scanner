@@ -20,9 +20,11 @@ namespace Scanner.Constants
             public const string CreateSkuBarcode = "Configuration/SkuBarcode/Create";
             public const string GetSkuBarcodeList = "Configuration/SkuBarcode/GetList";
             public const string GetSkuList = "Configuration/Sku/GetList";
+            public const string GetSkuIdByCode = "Configuration/Sku/GetIdByCode";
             public const string GetPrinterDriverList = "Configuration/PrinterDriver/GetList";
             public const string Printer = "Configuration/PrinterDriver/Printer";
         }
+
 
 
         public static class Outbound

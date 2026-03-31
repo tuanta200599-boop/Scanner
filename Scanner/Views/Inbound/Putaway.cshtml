@@ -385,18 +385,24 @@
                 }).then(r => r.json());
 
                 if (createRes.success) {
-                    // 5. Quay về màn hình chọn Pallet theo asnId
-                    window.location.href = `/Inbound/Putaway?asnId=${currentAsnId}`;
+                    playSuccessBeep();
+                    // Đợi một chút để tiếng bíp kêu xong trước khi chuyển trang
+                    setTimeout(() => {
+                        window.location.href = `/Inbound/Putaway?asnId=${currentAsnId}`;
+                    }, 600);
                 } else {
+                    playErrorBeep();
                     alert('Tạo LPN thất bại: ' + (createRes.message || 'Lỗi không xác định.'));
                     btn.disabled = false;
                     btn.innerHTML = originalHtml;
                 }
             } catch (e) {
+                playErrorBeep();
                 alert('Lỗi kết nối khi tạo LPN.');
                 btn.disabled = false;
                 btn.innerHTML = originalHtml;
             }
+
         }
 
         // AudioContext for the Web Audio API
@@ -424,14 +430,15 @@
         }
 
         function playSuccessBeep() {
-            // Hai tiếng bíp ngắn (tít tít)
-            playBeep(1200, 'sine', 100, 0.5);
-            setTimeout(() => playBeep(1200, 'sine', 150, 0.5), 150);
+            // Một tiếng bíp ngắn, cao (tít) - Thành công
+            playBeep(1200, 'sine', 200, 0.5);
         }
 
         function playErrorBeep() {
-            // Một tiếng bíp dài, vang, trầm hơn báo lỗi
-            playBeep(300, 'sawtooth', 600, 0.8);
+            // Hai tiếng bíp trầm, vang (tít tít) - Thất bại
+            playBeep(300, 'sawtooth', 300, 0.8);
+            setTimeout(() => playBeep(300, 'sawtooth', 300, 0.8), 350);
         }
+
     </script>
 }

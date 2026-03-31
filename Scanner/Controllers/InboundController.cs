@@ -143,26 +143,36 @@ namespace Scanner.Controllers
                 int qty = 1;
                 int skuId = 0;
 
-                // Cú pháp mã vạch có thể là {AsnId}-{SkuId} hoặc chỉ {SkuId} nếu đã truyền AsnId từ UI
-                var parts = barcode.Split('-');
+                string skuCode = "";
+                // Cú pháp mã vạch có thể là {SkuCode}:{Qty} hoặc chỉ {SkuCode}
+                var parts = barcode.Split(':');
                 if (parts.Length == 2)
                 {
-                    if (!int.TryParse(parts[0], out skuId) || !int.TryParse(parts[1], out qty))
+                    skuCode = parts[0];
+                    if (!int.TryParse(parts[1], out qty))
                     {
-                        return Json(new { success = false, message = "Định dạng mã vạch không hợp lệ. Vui lòng quét mã dạng AsnId-SkuId." });
+                        return Json(new { success = false, message = "Định dạng mã vạch không hợp lệ. Vui lòng thử lại." });
                     }
                 }
-                else if (parts.Length == 1 && asnId != 0)
+                else if (parts.Length == 1)
                 {
-                    if (!int.TryParse(parts[0], out skuId))
-                    {
-                        return Json(new { success = false, message = "Mã vạch SKU không hợp lệ. Vui lòng thử lại." });
-                    }
+                    skuCode = parts[0];
                 }
                 else
                 {
-                    return Json(new { success = false, message = "Mã vạch không đúng cấu trúc (thiếu AsnId)." });
+                    return Json(new { success = false, message = "Mã vạch không đúng cấu trúc." });
                 }
+
+                // Gọi API Sku/GetIdByCode để lấy SkuId từ SkuCode
+                string lookupUrl = $"{ApiEndpoints.Configuration.GetSkuIdByCode}?skuCode={Uri.EscapeDataString(skuCode)}";
+                var skuResult = await _apiService.GetAsync<ApiResponse<SkuIdResponseData>>(lookupUrl);
+
+                if (skuResult == null || !skuResult.IsSuccess || skuResult.Data == null)
+                {
+                    return Json(new { success = false, message = "Mã vạch SKU không hợp lệ. Vui lòng thử lại." });
+                }
+
+                skuId = skuResult.Data.SkuId;
 
                 var requestPayload = new ScanHandheldRequest
                 {
