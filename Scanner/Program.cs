@@ -39,7 +39,7 @@ builder.Services.AddAuthentication(options =>
 {
     //options.Authority = "http://localhost:44310/";
     options.Authority = "https://oidc.aubot.vn/";
-    options.RequireHttpsMetadata = false;
+    options.RequireHttpsMetadata = true;
     //options.NonceCookie = false;
     //options.ClientId = "Wms";
     //options.ClientSecret = "9d4840ba-a3ee-5fb9-e0ef-986f9eb6bf96";
