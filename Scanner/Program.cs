@@ -31,7 +31,7 @@ builder.Services.AddAuthentication(options =>
 {
     //options.Authority = "http://localhost:44310/";
     options.Authority = "https://oidc.aubot.vn/";
-    options.RequireHttpsMetadata = false;
+    options.RequireHttpsMetadata = true;
     //options.NonceCookie = false;
     options.ClientId = "PWA";
     //options.ClientSecret = "SDb26R1TrQN9wich6tf1PZO37odxGH3X";
