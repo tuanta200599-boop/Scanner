@@ -1,18 +1,23 @@
-﻿FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
 
-# Copy đúng path từ root
-COPY Scanner/Scanner.csproj Scanner/
-WORKDIR /src/Scanner
+# Sao chép file project trước để tận dụng cache
+COPY ["Scanner/Scanner.csproj", "Scanner/"]
+RUN dotnet restore "Scanner/Scanner.csproj"
 
-RUN dotnet restore
-
+# Sao chép toàn bộ mã nguồn từ thư mục gốc
 COPY . .
 
-RUN dotnet build -c Release -o /app/build
-RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false
+# Chuyển vào thư mục chứa project và build
+WORKDIR "/src/Scanner"
+RUN dotnet build "Scanner.csproj" -c Release -o /app/build
 
+# Publish stage
+FROM build AS publish
+RUN dotnet publish "Scanner.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+# Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS final
 WORKDIR /app
-COPY --from=build /app/publish .
+COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "Scanner.dll"]
