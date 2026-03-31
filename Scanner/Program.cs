@@ -46,6 +46,7 @@ builder.Services.AddAuthentication(options =>
     options.ClientId = "PWA";
     options.ClientSecret = "LoVx6GI2vfaoMa1ksQReQnScGKIe8nAg";
     options.ResponseType = "code";
+    options.ResponseMode = "query"; // Ép buộc sử dụng Query String cho tham số trả về
     options.Scope.Clear();
     options.Scope.Add("openid");
     options.Scope.Add("profile");
@@ -75,12 +76,23 @@ builder.Services.AddAuthentication(options =>
         },
         OnRemoteFailure = context =>
         {
-            Console.WriteLine("OIDC Remote Failure: " + context.Failure?.Message);
+            Console.WriteLine("--- OIDC Remote Failure Diagnostic ---");
+            Console.WriteLine("Method: " + context.Request.Method);
+            Console.WriteLine("Path: " + context.Request.Path);
+            Console.WriteLine("Failure: " + context.Failure?.Message);
+            
             if (context.Request.Query.Count > 0)
             {
                 foreach (var param in context.Request.Query)
                     Console.WriteLine($"Query: {param.Key} = {param.Value}");
             }
+            
+            if (context.Request.HasFormContentType)
+            {
+                foreach (var param in context.Request.Form)
+                    Console.WriteLine($"Form: {param.Key} = {param.Value}");
+            }
+            Console.WriteLine("---------------------------------------");
             return System.Threading.Tasks.Task.CompletedTask;
         },
         OnRedirectToIdentityProvider = context =>
