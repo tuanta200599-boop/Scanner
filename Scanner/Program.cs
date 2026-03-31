@@ -39,10 +39,11 @@ builder.Services.AddAuthentication(options =>
 {
     //options.Authority = "http://localhost:44310/";
     options.Authority = "https://oidc.aubot.vn/";
-    options.RequireHttpsMetadata = true;
+    options.RequireHttpsMetadata = false;
     //options.NonceCookie = false;
+    //options.ClientId = "Wms";
+    //options.ClientSecret = "9d4840ba-a3ee-5fb9-e0ef-986f9eb6bf96";
     options.ClientId = "PWA";
-    //options.ClientSecret = "SDb26R1TrQN9wich6tf1PZO37odxGH3X";
     options.ClientSecret = "LoVx6GI2vfaoMa1ksQReQnScGKIe8nAg";
     options.ResponseType = "code";
     options.Scope.Clear();
@@ -105,6 +106,6 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Home}/{action=Index}/{id?}").RequireAuthorization();
 
 app.Run();
