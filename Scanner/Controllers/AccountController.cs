@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Scanner.Controllers
 {
-    [Authorize]
+
     public class AccountController : Controller
     {
         [HttpGet]
