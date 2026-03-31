@@ -19,8 +19,8 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 
 builder.Services.Configure<CookiePolicyOptions>(options =>
 {
-    options.CheckConsentNeeded = context => true;
-    options.MinimumSameSitePolicy = SameSiteMode.Unspecified;
+    options.CheckConsentNeeded = context => false; // Tắt check consent để không chặn cookie OIDC
+    options.MinimumSameSitePolicy = SameSiteMode.None;
 });
 builder.Services.AddAuthentication(options =>
  {
@@ -57,8 +57,10 @@ builder.Services.AddAuthentication(options =>
     options.GetClaimsFromUserInfoEndpoint = true;
     options.SignedOutRedirectUri = "/";
 
-    options.NonceCookie.SameSite = SameSiteMode.Unspecified;
-    options.CorrelationCookie.SameSite = SameSiteMode.Unspecified;
+    options.NonceCookie.SameSite = SameSiteMode.None;
+    options.NonceCookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.CorrelationCookie.SameSite = SameSiteMode.None;
+    options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
 
     options.ClaimActions.MapUniqueJsonKey("departmentId", "departmentId");
     options.ClaimActions.MapUniqueJsonKey("departmentName", "departmentName");
