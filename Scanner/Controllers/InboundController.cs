@@ -6,7 +6,7 @@ using Scanner.Services;
 
 namespace Scanner.Controllers
 {
-    //[Authorize]
+    [Authorize]
     public class InboundController : Controller
     {
         private readonly IApiService _apiService;

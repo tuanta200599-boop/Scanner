@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Scanner.Controllers
 {
-    //[Authorize]
+    [Authorize]
     public class OutboundController : Controller
     {
         private readonly IApiService _apiService;
