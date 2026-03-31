@@ -62,6 +62,20 @@ builder.Services.AddAuthentication(options =>
     options.ClaimActions.MapUniqueJsonKey("departmentId", "departmentId");
     options.ClaimActions.MapUniqueJsonKey("departmentName", "departmentName");
     options.ClaimActions.MapUniqueJsonKey("isDepartmentManager", "isDepartmentManager");
+
+    options.Events = new OpenIdConnectEvents
+    {
+        OnAuthenticationFailed = context =>
+        {
+            Console.WriteLine("OIDC Auth Failed: " + context.Exception.Message);
+            return System.Threading.Tasks.Task.CompletedTask;
+        },
+        OnRemoteFailure = context =>
+        {
+            Console.WriteLine("OIDC Remote Failure: " + context.Failure?.Message);
+            return System.Threading.Tasks.Task.CompletedTask;
+        }
+    };
 });
 //builder.Services.AddAuthentication(options =>
 //{
@@ -80,7 +94,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection(); // Tắt HTTPS redirection trong Docker nếu Nginx đã xử lý
 app.UseStaticFiles();
 
 app.UseRouting();
