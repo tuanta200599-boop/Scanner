@@ -115,13 +115,13 @@ var app = builder.Build();
 app.UseForwardedHeaders();
 
 // Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Home/Error");
-    // Default HSTS for non-dev environments
-    app.UseHsts();
-}
+// if (!app.Environment.IsDevelopment())
+// {
 
+// }
+app.UseExceptionHandler("/Home/Error");
+// Default HSTS for non-dev environments
+app.UseHsts();
 // app.UseHttpsRedirection(); // Tắt HTTPS redirection trong Docker nếu Nginx đã xử lý
 app.UseStaticFiles();
 
