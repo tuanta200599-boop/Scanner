@@ -1,0 +1,10 @@
+**/*.bin
+**/*.obj
+**/*.user
+.vs/
+.git/
+.github/
+bin/
+obj/
+out/
+appsettings.Development.json
