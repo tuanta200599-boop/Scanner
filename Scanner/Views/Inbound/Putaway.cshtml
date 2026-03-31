@@ -109,7 +109,7 @@
                 <div class="card shadow-sm mb-3 border-0">
                     <div class="card-body text-center p-4">
                         <label for="barcodeInput" class="form-label fs-5 fw-bold text-muted mb-3">Sẵn sàng quét mã
-                            (SkuId-BoxId)</label>
+                            (SkuId:BoxQty)</label>
                         <input type="text" id="barcodeInput"
                             class="form-control form-control-lg text-center fw-bold fs-3"
                             placeholder="Tít mã vạch vào đây..." autocomplete="off">
@@ -279,13 +279,13 @@
             if (asnLineId > 0) {
                 // Có asnLineId → gọi API xóa trong DB
                 deleteBtn = `<button class="btn btn-sm btn-outline-danger border-0 px-2 py-0 ms-1" title="Xóa" onclick="deleteAsnLine(${asnLineId}, this)">
-                    <i class="bi bi-trash3"></i>
-                </button>`;
+                            <i class="bi bi-trash3"></i>
+                        </button>`;
             } else if (asnLineId === -1) {
                 // Bản ghi lỗi → chỉ xóa khỏi UI
                 deleteBtn = `<button class="btn btn-sm btn-outline-secondary border-0 px-2 py-0 ms-1" title="Bỏ qua" onclick="this.closest('li').remove()">
-                    <i class="bi bi-x-lg"></i>
-                </button>`;
+                            <i class="bi bi-x-lg"></i>
+                        </button>`;
             } else {
                 deleteBtn = '';
             }
@@ -293,18 +293,18 @@
             var li = document.createElement('li');
             li.className = `list-group-item d-flex align-items-center gap-3 ${borderClass} border-start border-4 mb-2 ${bgClass}`;
             li.innerHTML = `
-                ${iconHtml}
-                <div class="flex-grow-1">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <strong class="fs-5">${code}</strong>
-                        <div class="d-flex align-items-center gap-1">
-                            <small class="text-muted">${timeString}</small>
-                            ${deleteBtn}
+                        ${iconHtml}
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <strong class="fs-5">${code}</strong>
+                                <div class="d-flex align-items-center gap-1">
+                                    <small class="text-muted">${timeString}</small>
+                                    ${deleteBtn}
+                                </div>
+                            </div>
+                            <div class="text-muted small">${message}</div>
                         </div>
-                    </div>
-                    <div class="text-muted small">${message}</div>
-                </div>
-            `;
+                    `;
 
             // Ghi nhớ asnLineId trên element để createLpn() có thể thu thập
             if (asnLineId > 0) li.dataset.asnlineId = asnLineId;
@@ -343,8 +343,8 @@
         async function createLpn() {
             // 1. Thu thập asnLineIds từ các dòng đã quét thành công
             var ids = [...document.querySelectorAll('#scanHistoryList li[data-asnline-id]')]
-                        .map(li => parseInt(li.dataset.asnlineId))
-                        .filter(id => id > 0);
+                .map(li => parseInt(li.dataset.asnlineId))
+                .filter(id => id > 0);
 
             if (ids.length === 0) {
                 alert('Chưa có bản ghi quét hợp lệ để tạo LPN.');
@@ -364,24 +364,24 @@
 
                 // 3. Tạo lpnCode: {n}-{ddMMMMyyy}
                 var now = new Date();
-                var dd   = String(now.getDate()).padStart(2, '0');
-                var mm   = String(now.getMonth() + 1).padStart(2, '0');
+                var dd = String(now.getDate()).padStart(2, '0');
+                var mm = String(now.getMonth() + 1).padStart(2, '0');
                 var yyyy = now.getFullYear();
                 var lpnCode = `${nextNum}-${dd}${mm}${yyyy}`;
 
                 // 4. Gọi API tạo LPN
                 var payload = {
-                    lpnCode:    lpnCode,
-                    lpnLevel:   "1",
-                    qty:        ids.length,
-                    status:     "New",
+                    lpnCode: lpnCode,
+                    lpnLevel: "1",
+                    qty: ids.length,
+                    status: "New",
                     asnLineIds: ids
                 };
 
                 var createRes = await fetch('/Inbound/CreateLpn', {
-                    method:  'POST',
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body:    JSON.stringify(payload)
+                    body: JSON.stringify(payload)
                 }).then(r => r.json());
 
                 if (createRes.success) {
