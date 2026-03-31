@@ -20,4 +20,8 @@ RUN dotnet publish "Scanner.csproj" -c Release -o /app/publish /p:UseAppHost=fal
 FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+
+# Tạo thư mục lưu chìa khóa DataProtection và cấp quyền
+RUN mkdir /keys && chmod 777 /keys
+
 ENTRYPOINT ["dotnet", "Scanner.dll"]
