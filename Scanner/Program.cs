@@ -12,7 +12,7 @@ builder.Services.AddHttpClient<Scanner.Services.IApiService, Scanner.Services.Ap
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
     options.KnownNetworks.Clear();
     options.KnownProxies.Clear();
 });
@@ -30,8 +30,8 @@ builder.Services.AddAuthentication(options =>
  })
 .AddCookie(options =>
  {
-     options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax;
-     options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+     options.Cookie.SameSite = SameSiteMode.None; // Bắt buộc cho HTTPS Proxy
+     options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Luôn dùng Secure cookie
      options.Cookie.HttpOnly = true;
      options.Cookie.Name = ".AspNetCore.Cookies";
  })
@@ -76,6 +76,17 @@ builder.Services.AddAuthentication(options =>
         OnRemoteFailure = context =>
         {
             Console.WriteLine("OIDC Remote Failure: " + context.Failure?.Message);
+            if (context.Request.Query.Count > 0)
+            {
+                foreach (var param in context.Request.Query)
+                    Console.WriteLine($"Query: {param.Key} = {param.Value}");
+            }
+            return System.Threading.Tasks.Task.CompletedTask;
+        },
+        OnRedirectToIdentityProvider = context =>
+        {
+            Console.WriteLine("OIDC Redirecting to: " + context.ProtocolMessage.IssuerAddress);
+            Console.WriteLine("OIDC Redirect URI: " + context.ProtocolMessage.RedirectUri);
             return System.Threading.Tasks.Task.CompletedTask;
         }
     };
