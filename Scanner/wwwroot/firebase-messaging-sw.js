@@ -6,6 +6,12 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
     console.log('Service Worker activated');
 });
+
+// Sự kiện fetch (Bắt buộc để trình duyệt nhận diện trang web là PWA Installable)
+self.addEventListener('fetch', event => {
+    // Để trống hoặc có thể thêm cache logic sau này
+    // Đối với ứng dụng Scanner, ta có thể cho phép bypass hoàn toàn
+});
 importScripts('/firebase-app-compat.js');
 importScripts('/firebase-messaging-compat.js');
 

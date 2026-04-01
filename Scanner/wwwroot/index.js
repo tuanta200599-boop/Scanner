@@ -13,48 +13,36 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
 
-Notification.requestPermission().then(permission => {
-    if (permission === 'granted') {
-        navigator.serviceWorker.register('/firebase-messaging-sw.js').then(async (registration) => {
-            // Đợi cho đến khi Service Worker ở trạng thái 'active'
-            const activeWorker = registration.active || registration.waiting || registration.installing;
-            
-            if (registration.active) {
-                console.log('Service Worker is already active');
-            } else {
-                console.log('Waiting for Service Worker to become active...');
-                await new Promise((resolve) => {
-                    const worker = registration.installing || registration.waiting;
-                    worker.addEventListener('statechange', (e) => {
-                        if (e.target.state === 'activated') {
-                            resolve();
-                        }
-                    });
-                });
-                console.log('Service Worker activated!');
-            }
+// Đăng ký Service Worker ngay lập tức để thỏa mãn điều kiện PWA Installable
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/firebase-messaging-sw.js').then(async (registration) => {
+        console.log('✅ Service Worker registered for PWA');
 
-            return getToken(messaging, {
-                vapidKey: 'BNBghSaDseuOvHcqZN5rlEVGwKKvsR6252d_Dc1lJ0epdb0B0mCqOP1CYxme_8OeXOh1nQSjQcCSclhZTbjk2i0',
-                serviceWorkerRegistration: registration
-            });
-        }).then(token => {
-            console.log('Token:', token);
-            // Tự động đăng ký Topic WebAdminBus sử dụng URL từ appsettings.json
-            const baseUrl = window.apiBaseUrl || "http://localhost:5437";
-            fetch(`${baseUrl}/SubscribeToTopic?Token=${token}&Topics=WebAdminBus`, {
-                method: 'POST',
-                headers: {
-                    'accept': '*/*'
+        // Logic xử lý FCM và Token sau khi SW đã sẵn sàng
+        Notification.requestPermission().then(async (permission) => {
+            if (permission === 'granted') {
+                try {
+                    const token = await getToken(messaging, {
+                        vapidKey: 'BNBghSaDseuOvHcqZN5rlEVGwKKvsR6252d_Dc1lJ0epdb0B0mCqOP1CYxme_8OeXOh1nQSjQcCSclhZTbjk2i0',
+                        serviceWorkerRegistration: registration
+                    });
+
+                    console.log('Token:', token);
+                    const baseUrl = window.apiBaseUrl || "http://localhost:5437";
+                    fetch(`${baseUrl}/SubscribeToTopic?Token=${token}&Topics=WebAdminBus`, {
+                        method: 'POST',
+                        headers: { 'accept': '*/*' }
+                    })
+                    .then(response => {
+                        if (response.ok) console.log('✅ Đăng ký Topic WebAdminBus thành công');
+                        else console.error('❌ Lỗi đăng ký Topic:', response.statusText);
+                    })
+                    .catch(err => console.error('❌ Lỗi kết nối API Subscribe:', err));
+
+                } catch (err) {
+                    console.error('Error getting token:', err);
                 }
-            })
-            .then(response => {
-                if (response.ok) console.log('✅ Đăng ký Topic WebAdminBus thành công');
-                else console.error('❌ Lỗi đăng ký Topic:', response.statusText);
-            })
-            .catch(err => console.error('❌ Lỗi kết nối API Subscribe:', err));
-        }).catch(err => {
-            console.error('Error getting token:', err);
+            }
         });
 
         // Lắng nghe tin nhắn từ Service Worker (Background)
@@ -64,19 +52,19 @@ Notification.requestPermission().then(permission => {
             if (event.data && event.data.type === 'FCM_NOTIFICATION') {
                 if (typeof window.addNotificationToUI === 'function') {
                     window.addNotificationToUI(event.data.payload);
-                } else {
-                    console.error('❌ window.addNotificationToUI chưa được định nghĩa!');
                 }
             }
         };
 
+        // Lắng nghe tin nhắn khi App đang mở (Foreground)
         onMessage(messaging, (payload) => {
             console.log('--- index.js nhận Foreground message:', payload);
             if (typeof window.addNotificationToUI === 'function') {
                 window.addNotificationToUI(payload);
-            } else {
-                console.error('❌ window.addNotificationToUI chưa được định nghĩa!');
             }
         });
-    }
-});
+
+    }).catch(err => {
+        console.error('❌ Service Worker registration failed:', err);
+    });
+}

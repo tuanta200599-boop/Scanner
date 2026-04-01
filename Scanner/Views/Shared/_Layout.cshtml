@@ -7,6 +7,17 @@
     <script>
         window.apiBaseUrl = '@Configuration["ApiSettings:BaseUrl"]';
     </script>
+    <script>
+        // Enforce PWA Standalone Mode
+        (function () {
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+            const isInstallPage = window.location.pathname.toLowerCase().includes('/home/install');
+
+            if (!isStandalone && !isInstallPage) {
+                window.location.replace('/Home/Install');
+            }
+        })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
