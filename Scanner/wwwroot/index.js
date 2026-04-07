@@ -28,16 +28,18 @@ if ('serviceWorker' in navigator) {
                     });
 
                     console.log('Token:', token);
-                    const baseUrl = window.apiBaseUrl || "http://localhost:5437";
-                    fetch(`${baseUrl}/SubscribeToTopic?Token=${token}&Topics=WebAdminBus`, {
+                    fetch(`/Home/SubscribeToTopic?token=${token}&topics=WebAdminBus`, {
                         method: 'POST',
-                        headers: { 'accept': '*/*' }
+                        headers: {
+                            'accept': 'application/json'
+                        }
                     })
-                    .then(response => {
-                        if (response.ok) console.log('✅ Đăng ký Topic WebAdminBus thành công');
-                        else console.error('❌ Lỗi đăng ký Topic:', response.statusText);
-                    })
-                    .catch(err => console.error('❌ Lỗi kết nối API Subscribe:', err));
+                        .then(response => response.json())
+                        .then(result => {
+                            if (result.success) console.log('✅ Đăng ký Topic WebAdminBus thành công');
+                            else console.error('❌ Lỗi đăng ký Topic:', result.message);
+                        })
+                        .catch(err => console.error('❌ Lỗi kết nối API Subscribe:', err));
 
                 } catch (err) {
                     console.error('Error getting token:', err);
@@ -67,4 +69,4 @@ if ('serviceWorker' in navigator) {
     }).catch(err => {
         console.error('❌ Service Worker registration failed:', err);
     });
-}
+}

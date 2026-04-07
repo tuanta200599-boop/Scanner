@@ -1,24 +1,25 @@
+@using Microsoft.AspNetCore.Authentication
 @inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="utf-8" />
-    <script>
-        window.apiBaseUrl = '@Configuration["ApiSettings:BaseUrl"]';
-    </script>
-    <script>
-        // Enforce PWA Standalone Mode
-        (function () {
-            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-            const isInstallPage = window.location.pathname.toLowerCase().includes('/home/install');
+    @* <script>
+    // Enforce PWA Standalone Mode
+    (function () {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone ===
+    true;
+    const isInstallPage = window.location.pathname.toLowerCase().includes('/home/install');
 
-            if (!isStandalone && !isInstallPage) {
-                window.location.replace('/Home/Install');
-            }
-        })();
-    </script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    if (!isStandalone && !isInstallPage) {
+    window.location.replace('/Home/Install');
+    }
+    })();
+    </script> *@
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -52,7 +53,8 @@
         <!-- Notifications Icon -->
         <div class="fb-tab-item" id="notif-toggle">
             <i class="bi bi-bell-fill"></i>
-            <span class="badge rounded-pill bg-danger" style="position: absolute; top: 10px; right: 20%; font-size: 10px;">3</span>
+            <span class="badge rounded-pill bg-danger"
+                style="position: absolute; top: 10px; right: 20%; font-size: 10px;">3</span>
         </div>
         <!-- Hamburger Menu Icon -->
         <div class="fb-tab-item" id="hamburger-menu">
@@ -104,7 +106,7 @@
         <div class="px-3 mb-4">
             <h4 class="fw-bold">Menu</h4>
         </div>
-        
+
         <a class="fb-menu-item" href="/">
             <i class="bi bi-person-fill"></i>
             <span>Trang cá nhân</span>
@@ -135,97 +137,9 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     <script>
-        // Hàm thêm thông báo vào UI (Sẽ được gọi từ index.js)
-        window.addNotificationToUI = function (payload) {
-            console.log('--- UI nhận được Notification payload:', payload);
-            const title = payload.notification?.title || payload.data?.title || "Thông báo hệ thống";
-            const body = payload.notification?.body || payload.data?.body || "Bạn có tin nhắn mới";
-            const time = "Vừa xong";
-
-            // Tạo icon ngẫu nhiên hoặc dựa trên data cho sinh động
-            const icons = ["bi-info-circle-fill bg-primary", "bi-lightning-fill bg-warning", "bi-bell-fill bg-info"];
-            const randomIcon = icons[Math.floor(Math.random() * icons.length)];
-
-            const notifHtml = `
-                    <div class="notif-item unread">
-                        <i class="bi ${randomIcon} text-white me-3"></i>
-                        <div class="border-bottom pb-2 w-100">
-                            <div class="fw-bold text-dark">${title}</div>
-                            <div class="text-muted small">${time} • Hệ thống</div>
-                            <div class="small mt-1 text-secondary">${body}</div>
-                        </div>
-                    </div>
-                `;
-
-            // Thêm vào đầu danh sách
-            const $list = $('.notif-list');
-            if ($list.length) {
-                $list.prepend(notifHtml);
-                console.log('✅ Đã chèn HTML thông báo vào danh sách');
-            } else {
-                console.warn('⚠️ Không tìm thấy class .notif-list để chèn thông báo');
-            }
-
-            // Cập nhật Badge
-            const $badge = $('#notif-toggle .badge');
-            if ($badge.length) {
-                let count = parseInt($badge.text()) || 0;
-                $badge.text(count + 1).show();
-                console.log('✅ Đã cập nhật Badge thông báo:', count + 1);
-            }
-        };
-
-        $(document).ready(function () {
-            // Toggle side menu
-            $('#hamburger-menu, #menu-overlay').on('click', function() {
-                var menu = $('#side-menu');
-                var overlay = $('#menu-overlay');
-                $('#notif-box').removeClass('show'); // Hide notif box when menu opens
-                
-                if (menu.hasClass('show')) {
-                    menu.removeClass('show');
-                    overlay.fadeOut(300);
-                } else {
-                    overlay.show().css('opacity', 1);
-                    menu.addClass('show');
-                }
-            });
-
-            // Toggle notification box
-            $('#notif-toggle').on('click', function(e) {
-                e.stopPropagation();
-                $('#notif-box').toggleClass('show');
-                $('#side-menu').removeClass('show'); // Hide menu when notif opens
-                if($('#notif-box').hasClass('show')) {
-                    $('#menu-overlay').show().css('opacity', 0); // Transparent overlay to close on click outside
-                } else {
-                    $('#menu-overlay').fadeOut(300);
-                }
-            });
-
-            // Click outside to close
-            $(document).on('click', function(e) {
-                if (!$(e.target).closest('#notif-box, #notif-toggle, #side-menu, #hamburger-menu').length) {
-                    $('#notif-box').removeClass('show');
-                    $('#side-menu').removeClass('show');
-                    $('#menu-overlay').fadeOut(300);
-                }
-            });
-
-            // Active tab handling
-            var currentPath = window.location.pathname;
-            $('.fb-tab-item').not('#hamburger-menu, #notif-toggle').removeClass('active');
-            $('.fb-tab-item').each(function() {
-                var href = $(this).attr('href');
-                if (href && currentPath === href) {
-                    $(this).addClass('active');
-                }
-            });
-            if (currentPath === '/') $('.fb-tab-item:first').addClass('active');
-
             // Hàm thêm thông báo vào UI (Sẽ được gọi từ index.js)
-            window.addNotificationToUI = function(payload) {
-                console.log('Adding notification to UI:', payload);
+            window.addNotificationToUI = function (payload) {
+                console.log('--- UI nhận được Notification payload:', payload);
                 const title = payload.notification?.title || payload.data?.title || "Thông báo hệ thống";
                 const body = payload.notification?.body || payload.data?.body || "Bạn có tin nhắn mới";
                 const time = "Vừa xong";
@@ -238,23 +152,79 @@
                     <div class="notif-item unread">
                         <i class="bi ${randomIcon} text-white me-3"></i>
                         <div class="border-bottom pb-2 w-100">
-                            <div class="fw-bold">${title}</div>
+                            <div class="fw-bold text-dark">${title}</div>
                             <div class="text-muted small">${time} • Hệ thống</div>
-                            <div class="small mt-1">${body}</div>
+                            <div class="small mt-1 text-secondary">${body}</div>
                         </div>
                     </div>
                 `;
 
                 // Thêm vào đầu danh sách
-                $('.notif-list').prepend(notifHtml);
+                const $list = $('.notif-list');
+                if ($list.length) {
+                    $list.prepend(notifHtml);
+                    console.log('✅ Đã chèn HTML thông báo vào danh sách');
+                } else {
+                    console.warn('⚠️ Không tìm thấy class .notif-list để chèn thông báo');
+                }
 
                 // Cập nhật Badge
-                const badge = $('#notif-toggle .badge');
-                let count = parseInt(badge.text()) || 0;
-                badge.text(count + 1).show();
-
-                // Nếu đang mở box thông báo thì bỏ unread sau vài giây (optional)
+                const $badge = $('#notif-toggle .badge');
+                if ($badge.length) {
+                    let count = parseInt($badge.text()) || 0;
+                    $badge.text(count + 1).show();
+                    console.log('✅ Đã cập nhật Badge thông báo:', count + 1);
+                }
             };
+
+        $(document).ready(function () {
+            // Toggle side menu
+            $('#hamburger-menu, #menu-overlay').on('click', function () {
+                var menu = $('#side-menu');
+                var overlay = $('#menu-overlay');
+                $('#notif-box').removeClass('show'); // Hide notif box when menu opens
+
+                if (menu.hasClass('show')) {
+                    menu.removeClass('show');
+                    overlay.fadeOut(300);
+                } else {
+                    overlay.show().css('opacity', 1);
+                    menu.addClass('show');
+                }
+            });
+
+            // Toggle notification box
+            $('#notif-toggle').on('click', function (e) {
+                e.stopPropagation();
+                $('#notif-box').toggleClass('show');
+                $('#side-menu').removeClass('show'); // Hide menu when notif opens
+                if ($('#notif-box').hasClass('show')) {
+                    $('#menu-overlay').show().css('opacity', 0); // Transparent overlay to close on click outside
+                } else {
+                    $('#menu-overlay').fadeOut(300);
+                }
+            });
+
+            // Click outside to close
+            $(document).on('click', function (e) {
+                if (!$(e.target).closest('#notif-box, #notif-toggle, #side-menu, #hamburger-menu').length) {
+                    $('#notif-box').removeClass('show');
+                    $('#side-menu').removeClass('show');
+                    $('#menu-overlay').fadeOut(300);
+                }
+            });
+
+            // Active tab handling
+            var currentPath = window.location.pathname;
+            $('.fb-tab-item').not('#hamburger-menu, #notif-toggle').removeClass('active');
+            $('.fb-tab-item').each(function () {
+                var href = $(this).attr('href');
+                if (href && currentPath === href) {
+                    $(this).addClass('active');
+                }
+            });
+            if (currentPath === '/') $('.fb-tab-item:first').addClass('active');
+
         });
 
         // Hàm xử lý Logout để xóa màn hình cũ trước khi chuyển hướng sang tab OIDC của PWA
