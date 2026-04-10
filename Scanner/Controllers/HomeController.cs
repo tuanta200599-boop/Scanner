@@ -51,7 +51,6 @@ namespace Scanner.Controllers
                     Token = token,
                     Topics = topics
                 };
-
                 // Proxy the request to the backend API
                 // The backend API expects a SubscribeTopicRequest object in the body
                 var result = await _apiService.PostAsync<object>("SubscribeToTopic", requestData);

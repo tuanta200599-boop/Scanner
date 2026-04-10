@@ -50,6 +50,7 @@ builder.Services.AddAuthentication(options =>
     options.Scope.Add("profile");
     options.Scope.Add("email");
     options.Scope.Add("roles");
+    options.Scope.Add("offline_access");
 
     options.SaveTokens = true;
     options.GetClaimsFromUserInfoEndpoint = true;
@@ -105,7 +106,11 @@ builder.Services.AddAuthentication(options =>
         }
     };
 });
-
+var tokenBuilder = builder.Services.AddOpenIdConnectAccessTokenManagement();
+tokenBuilder.AddUserAccessTokenHttpClient("Pwa", configureClient: client =>
+{
+    client.BaseAddress = new Uri("https://pwa.aubot.vn/");
+});
 //builder.Services.AddAuthentication(options =>
 //{
 //    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
