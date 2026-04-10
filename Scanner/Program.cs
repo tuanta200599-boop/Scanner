@@ -97,20 +97,21 @@ builder.Services.AddAuthentication(options =>
             }
             Console.WriteLine("---------------------------------------");
             return System.Threading.Tasks.Task.CompletedTask;
-        },
+        }
         OnRedirectToIdentityProvider = context =>
         {
             Console.WriteLine("OIDC Redirecting to: " + context.ProtocolMessage.IssuerAddress);
             Console.WriteLine("OIDC Redirect URI: " + context.ProtocolMessage.RedirectUri);
             return System.Threading.Tasks.Task.CompletedTask;
         }
+
     };
 });
-var tokenBuilder = builder.Services.AddOpenIdConnectAccessTokenManagement();
-tokenBuilder.AddUserAccessTokenHttpClient("Pwa", configureClient: client =>
-{
-    client.BaseAddress = new Uri("https://pwa.aubot.vn/");
-});
+//var tokenBuilder = builder.Services.AddOpenIdConnectAccessTokenManagement();
+//tokenBuilder.AddUserAccessTokenHttpClient("pwa", configureClient: client =>
+//{
+//    client.BaseAddress = new Uri("https://pwa.aubot.vn/");
+//});
 //builder.Services.AddAuthentication(options =>
 //{
 //    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
