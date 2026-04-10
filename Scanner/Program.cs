@@ -97,7 +97,7 @@ builder.Services.AddAuthentication(options =>
             }
             Console.WriteLine("---------------------------------------");
             return System.Threading.Tasks.Task.CompletedTask;
-        }
+        },
         OnRedirectToIdentityProvider = context =>
         {
             Console.WriteLine("OIDC Redirecting to: " + context.ProtocolMessage.IssuerAddress);
