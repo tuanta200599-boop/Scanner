@@ -42,7 +42,7 @@ builder.Services.AddAuthentication(options =>
     options.Authority = "https://oidc.aubot.vn/";
     options.RequireHttpsMetadata = true;
     options.ClientId = "pwa";
-    options.ClientSecret = "vNN8PWQhYwoKGukxST4Y41W1Wf2AxD6w";
+    options.ClientSecret = "ewxHIu7co1Uuj3De4EZvOHjBzqCsDkBJ";
     options.ResponseType = "code";
     
     options.Scope.Clear();
