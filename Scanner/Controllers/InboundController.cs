@@ -53,22 +53,27 @@ namespace Scanner.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> UpdateStatus(int id, decimal? actualQty, string? actualTemp)
+        public async Task<IActionResult> UpdateStatus(int id, decimal? actualQty, string? actualTemp, DateTime? actualArrival)
         {
             try
             {
                 // Gọi API PUT UpdateExpressStatus.
                 // Truyền các tham số qua query string vì backend có thể chỉ nhận từ đây.
                 string endpoint = $"{ApiEndpoints.Inbound.UpdateExpressStatus}?asnId={id}";
-                
+
                 if (actualQty.HasValue)
                 {
                     endpoint += $"&actualQty={actualQty}";
                 }
-                
+
                 if (!string.IsNullOrEmpty(actualTemp))
                 {
                     endpoint += $"&actualTemp={Uri.EscapeDataString(actualTemp)}";
+                }
+
+                if (actualArrival.HasValue)
+                {
+                    endpoint += $"&actualArrival={Uri.EscapeDataString(actualArrival.Value.ToString("o"))}";
                 }
 
                 // Gửi PUT request.
@@ -105,7 +110,7 @@ namespace Scanner.Controllers
                 string endpoint = $"{ApiEndpoints.Configuration.GetPalletList}?page={page}&pageSize={actualPageSize}";
                 if (!string.IsNullOrEmpty(palletCode))
                 {
-                    // Assuming API supports filtering by palletCode like this. 
+                    // Assuming API supports filtering by palletCode like this.
                     // Adjust query parameter name if it's different in the actual WCS API.
                     endpoint += $"&palletCode={Uri.EscapeDataString(palletCode)}";
                 }
@@ -204,7 +209,7 @@ namespace Scanner.Controllers
         {
             try
             {
-                var payload = new 
+                var payload = new
                 {
                     id = palletId,
                     palletCode = palletCode,
@@ -276,12 +281,12 @@ namespace Scanner.Controllers
             {
                 string endpoint = $"{ApiEndpoints.Inbound.GetAsnList}?page=1&pageSize=1";
                 var apiResult = await _apiService.GetAsync<ApiResponse<List<AsnItemViewModel>>>(endpoint);
-                
+
                 if (apiResult?.IsSuccess == true)
                 {
                     return Json(new { count = apiResult.TotalRecords });
                 }
-                
+
                 return Json(new { count = 0 });
             }
             catch

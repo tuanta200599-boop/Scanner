@@ -178,6 +178,7 @@
                 var id = $('#modalAsnId').val();
                 var actualQty = $('#actualQty').val();
                 var actualTemp = $('#actualTemp').val();
+                var actualArrival = new Date().toISOString();
 
                 // Validation
                 if (!actualQty || !actualTemp) {
@@ -205,7 +206,8 @@
                 $.post('@Url.Action("UpdateStatus", "Inbound")', {
                     id: id,
                     actualQty: actualQty,
-                    actualTemp: actualTemp
+                    actualTemp: actualTemp,
+                    actualArrival: actualArrival
                 })
                     .done(function (response) {
                         arrivalModal.hide();
