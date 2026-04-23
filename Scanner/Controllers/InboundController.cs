@@ -6,8 +6,8 @@ using Scanner.Services;
 
 namespace Scanner.Controllers
 {
-    [Authorize]
-    public class InboundController : Controller
+  
+    public class InboundController : BaseController
     {
         private readonly ILogger<InboundController> _logger;
         private readonly IApiService _apiService;

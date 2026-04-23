@@ -6,8 +6,8 @@ using Scanner.Services;
 
 namespace Scanner.Controllers
 {
-    [Authorize]
-    public class BarcodeController : Controller
+
+    public class BarcodeController : BaseController
     {
         private readonly IApiService _apiService;
         private readonly IConfiguration _configuration;
