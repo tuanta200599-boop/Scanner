@@ -15,9 +15,8 @@ data:
     [INPUT]
         Name              tail
         Tag               kube.*
-        Path              /var/log/containers/*.log
+        Path              /var/log/pods/*/*/*.log
         Parser            docker
-        DB                /var/log/flb_kube.db
         Mem_Buf_Limit     5MB
         Skip_Long_Lines   On
 
@@ -39,7 +38,10 @@ data:
         Port            9200
         Logstash_Format On
         Logstash_Prefix scanner-logs
-        Type            _doc
+        Suppress_Type_Name On
+        Generate_ID      On
+        Replace_Dots     On
+        tls              Off
         Retry_Limit     False
 
   parsers.conf: |
@@ -68,7 +70,7 @@ spec:
       serviceAccountName: fluent-bit-service-account
       containers:
       - name: fluent-bit
-        image: fluent/fluent-bit:latest
+        image: fluent/fluent-bit:latest-debug
         volumeMounts:
         - name: varlog
           mountPath: /var/log
