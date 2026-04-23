@@ -21,7 +21,6 @@ namespace Scanner.Controllers
         public IActionResult Index()
         {
             _logger.LogInformation("Scanner App: Index page accessed at {Time}", DateTime.UtcNow);
-            Console.WriteLine(">>>>>> SCANNED APP DEBUG: INDEX PAGE ACCESSED AT " + DateTime.UtcNow);
             return View();
         }
 

@@ -11,15 +11,7 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient<Scanner.Services.IApiService, Scanner.Services.ApiService>();
 builder.Logging.ClearProviders();
-builder.Logging.AddJsonConsole(options =>
-{
-    options.IncludeScopes = true;
-    options.TimestampFormat = "yyyy-MM-dd HH:mm:ss ";
-    options.JsonWriterOptions = new System.Text.Json.JsonWriterOptions
-    {
-        Indented = false // Để false để log gọn trên 1 dòng, dễ thu thập
-    };
-});
+builder.Logging.AddConsole();
 //builder.Services.Configure<ForwardedHeadersOptions>(options =>
 //{
 //    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
