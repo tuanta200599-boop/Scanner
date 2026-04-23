@@ -6,7 +6,7 @@ using System.Diagnostics;
 
 namespace Scanner.Controllers
 {
-    [Authorize]
+    //[Authorize]
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
@@ -20,6 +20,7 @@ namespace Scanner.Controllers
 
         public IActionResult Index()
         {
+            _logger.LogInformation("Scanner App: Index page accessed at {Time}", DateTime.UtcNow);
             return View();
         }
 

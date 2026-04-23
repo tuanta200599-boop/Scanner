@@ -10,113 +10,119 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient<Scanner.Services.IApiService, Scanner.Services.ApiService>();
-
-builder.Services.Configure<ForwardedHeadersOptions>(options =>
+builder.Logging.ClearProviders();
+builder.Logging.AddJsonConsole(options =>
 {
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
-    options.KnownNetworks.Clear();
-    options.KnownProxies.Clear();
-});
-
-builder.Services.Configure<CookiePolicyOptions>(options =>
-{
-    options.CheckConsentNeeded = context => false; // Tắt check consent để không chặn cookie OIDC
-    options.MinimumSameSitePolicy = SameSiteMode.None;
-});
-
-builder.Services.AddAuthentication(options =>
- {
-     options.DefaultScheme = "Cookies";
-     options.DefaultChallengeScheme = "oidc";
-     options.DefaultSignOutScheme = "oidc";
- })
-.AddCookie(options =>
- {
-     options.Cookie.SameSite = SameSiteMode.None; //None Bắt buộc cho HTTPS Proxy
-     options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Luôn dùng Secure cookie
-     options.Cookie.HttpOnly = true;
-     options.Cookie.Name = ".AspNetCore.Cookies";
- })
-.AddOpenIdConnect("oidc", options =>
-{
-    options.Authority = "https://oidc.aubot.vn/";
-    options.RequireHttpsMetadata = true;
-    options.ClientId = "pwa";
-    options.ClientSecret = "ewxHIu7co1Uuj3De4EZvOHjBzqCsDkBJ";
-    options.ResponseType = "code";
-    
-    options.Scope.Clear();
-    options.Scope.Add("openid");
-    options.Scope.Add("profile");
-    options.Scope.Add("email");
-    options.Scope.Add("roles");
-    options.Scope.Add("offline_access");
-
-    options.SaveTokens = true;
-    options.GetClaimsFromUserInfoEndpoint = true;
-    options.SignedOutRedirectUri = "/";
-
-    options.NonceCookie.SameSite = SameSiteMode.None;
-    options.NonceCookie.SecurePolicy = CookieSecurePolicy.Always;
-    options.CorrelationCookie.SameSite = SameSiteMode.None;
-    options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
-
-    options.ClaimActions.MapUniqueJsonKey("departmentId", "departmentId");
-    options.ClaimActions.MapUniqueJsonKey("departmentName", "departmentName");
-    options.ClaimActions.MapUniqueJsonKey("isDepartmentManager", "isDepartmentManager");
-
-    options.Events = new OpenIdConnectEvents
+    options.IncludeScopes = true;
+    options.TimestampFormat = "yyyy-MM-dd HH:mm:ss ";
+    options.JsonWriterOptions = new System.Text.Json.JsonWriterOptions
     {
-        OnAuthenticationFailed = context =>
-        {
-            Console.WriteLine("OIDC Auth Failed: " + context.Exception.Message);
-            return System.Threading.Tasks.Task.CompletedTask;
-        },
-        OnRemoteFailure = context =>
-        {
-            Console.WriteLine("--- OIDC Remote Failure Diagnostic ---");
-            Console.WriteLine("Method: " + context.Request.Method);
-            Console.WriteLine("Path: " + context.Request.Path);
-            Console.WriteLine("Failure: " + context.Failure?.Message);
-
-            if (context.Failure != null)
-            {
-                Console.WriteLine("Failure Inner: " + context.Failure.InnerException?.Message);
-            }
-
-            if (context.Request.Query.Count > 0)
-            {
-                foreach (var param in context.Request.Query)
-                    Console.WriteLine($"Query: {param.Key} = {param.Value}");
-            }
-
-            if (context.Request.HasFormContentType)
-            {
-                foreach (var param in context.Request.Form)
-                    Console.WriteLine($"Form: {param.Key} = {param.Value}");
-            }
-            Console.WriteLine("---------------------------------------");
-            return System.Threading.Tasks.Task.CompletedTask;
-        },
-        OnRedirectToIdentityProvider = context =>
-        {
-            Console.WriteLine("OIDC Redirecting to: " + context.ProtocolMessage.IssuerAddress);
-            Console.WriteLine("OIDC Redirect URI: " + context.ProtocolMessage.RedirectUri);
-            return System.Threading.Tasks.Task.CompletedTask;
-        }
-
+        Indented = false // Để false để log gọn trên 1 dòng, dễ thu thập
     };
 });
-//var tokenBuilder = builder.Services.AddOpenIdConnectAccessTokenManagement();
-//tokenBuilder.AddUserAccessTokenHttpClient("pwa", configureClient: client =>
+//builder.Services.Configure<ForwardedHeadersOptions>(options =>
 //{
-//    client.BaseAddress = new Uri("https://pwa.aubot.vn/");
+//    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
+//    options.KnownNetworks.Clear();
+//    options.KnownProxies.Clear();
 //});
+
+//builder.Services.Configure<CookiePolicyOptions>(options =>
+//{
+//    options.CheckConsentNeeded = context => false; // Tắt check consent để không chặn cookie OIDC
+//    options.MinimumSameSitePolicy = SameSiteMode.None;
+//});
+
 //builder.Services.AddAuthentication(options =>
+// {
+//     options.DefaultScheme = "Cookies";
+//     options.DefaultChallengeScheme = "oidc";
+//     options.DefaultSignOutScheme = "oidc";
+// })
+//.AddCookie(options =>
+// {
+//     options.Cookie.SameSite = SameSiteMode.None; //None Bắt buộc cho HTTPS Proxy
+//     options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Luôn dùng Secure cookie
+//     options.Cookie.HttpOnly = true;
+//     options.Cookie.Name = ".AspNetCore.Cookies";
+// })
+//.AddOpenIdConnect("oidc", options =>
 //{
-//    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-//    options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+//    //options.Authority = "https://oidc.aubot.vn/";
+//    options.Authority = "http://localhost:44310/";
+//    options.RequireHttpsMetadata = false;
+//    options.ClientId = "pwa";
+//    options.ClientSecret = "vNN8PWQhYwoKGukxST4Y41W1Wf2AxD6w";
+//    //options.ClientSecret = "ewxHIu7co1Uuj3De4EZvOHjBzqCsDkBJ";
+//    options.ResponseType = "code";
+
+//    options.Scope.Clear();
+//    options.Scope.Add("openid");
+//    options.Scope.Add("profile");
+//    options.Scope.Add("email");
+//    options.Scope.Add("roles");
+//    options.Scope.Add("offline_access");
+
+//    options.SaveTokens = true;
+//    options.GetClaimsFromUserInfoEndpoint = true;
+//    options.SignedOutRedirectUri = "/";
+
+//    options.NonceCookie.SameSite = SameSiteMode.None;
+//    options.NonceCookie.SecurePolicy = CookieSecurePolicy.Always;
+//    options.CorrelationCookie.SameSite = SameSiteMode.None;
+//    options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
+
+//    options.ClaimActions.MapUniqueJsonKey("departmentId", "departmentId");
+//    options.ClaimActions.MapUniqueJsonKey("departmentName", "departmentName");
+//    options.ClaimActions.MapUniqueJsonKey("isDepartmentManager", "isDepartmentManager");
+
+//    options.Events = new OpenIdConnectEvents
+//    {
+//        OnAuthenticationFailed = context =>
+//        {
+//            Console.WriteLine("OIDC Auth Failed: " + context.Exception.Message);
+//            return System.Threading.Tasks.Task.CompletedTask;
+//        },
+//        OnRemoteFailure = context =>
+//        {
+//            Console.WriteLine("--- OIDC Remote Failure Diagnostic ---");
+//            Console.WriteLine("Method: " + context.Request.Method);
+//            Console.WriteLine("Path: " + context.Request.Path);
+//            Console.WriteLine("Failure: " + context.Failure?.Message);
+
+//            if (context.Failure != null)
+//            {
+//                Console.WriteLine("Failure Inner: " + context.Failure.InnerException?.Message);
+//            }
+
+//            if (context.Request.Query.Count > 0)
+//            {
+//                foreach (var param in context.Request.Query)
+//                    Console.WriteLine($"Query: {param.Key} = {param.Value}");
+//            }
+
+//            if (context.Request.HasFormContentType)
+//            {
+//                foreach (var param in context.Request.Form)
+//                    Console.WriteLine($"Form: {param.Key} = {param.Value}");
+//            }
+//            Console.WriteLine("---------------------------------------");
+//            return System.Threading.Tasks.Task.CompletedTask;
+//        },
+//        OnRedirectToIdentityProvider = context =>
+//        {
+//            Console.WriteLine("OIDC Redirecting to: " + context.ProtocolMessage.IssuerAddress);
+//            Console.WriteLine("OIDC Redirect URI: " + context.ProtocolMessage.RedirectUri);
+//            return System.Threading.Tasks.Task.CompletedTask;
+//        }
+
+//    };
 //});
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+});
 var app = builder.Build();
 
 app.UseForwardedHeaders();

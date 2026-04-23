@@ -12,67 +12,103 @@
 </div>
 
 @if (!ViewData.ModelState.IsValid)
-
 {
     <div class="alert alert-danger" role="alert">
         @Html.ValidationSummary(false, "", new { @class = "mb-0" })
     </div>
 }
 
-<div class="row row-cols-1 row-cols-md-2 g-3">
+<div class="container-fluid px-3">
     @if (Model.Items != null && Model.Items.Any())
-
     {
+        var groupedOrders = Model.Items.GroupBy(i => new { i.OrderId, i.OrderNumber });
 
-        foreach (var item in Model.Items)
-
+        foreach (var orderGroup in groupedOrders)
         {
-            <div class="col">
-                <div class="card shadow-sm h-100">
-                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                        <span class="fw-bold fs-5">Mã nhiệm vụ: @item.TaskCode</span>
-                        <span class="badge bg-light text-dark">ID: @item.PickingTaskId</span>
+            var totalTasks = orderGroup.Count();
+            var pickedTasks = orderGroup.Count(t => t.Status == "CLOSED");
+            var progress = totalTasks > 0 ? (int)((double)pickedTasks / totalTasks * 100) : 0;
+
+            <div class="picking-order-card">
+                <div class="order-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0 fw-bold">📦 Đơn hàng: @(string.IsNullOrEmpty(orderGroup.Key.OrderNumber) ? orderGroup.Key.OrderId.ToString() : orderGroup.Key.OrderNumber)</h5>
+                        <small class="opacity-75">ID: @orderGroup.Key.OrderId</small>
                     </div>
-                    <div class="card-body">
-                        <div class="row mb-2">
-                            <div class="col-6">
-                                <small class="text-muted d-block">Loại nhiệm vụ</small>
-                                <strong>@item.TaskType</strong>
-                            </div>
-                            <div class="col-6 text-end">
-                                <small class="text-muted d-block">Đơn vị (UOM)</small>
-                                <strong>@item.Uom</strong>
-                            </div>
-                        </div>
+                    <div class="text-end">
+                        <div class="fw-bold fs-5">@pickedTasks / @totalTasks</div>
+                        <small class="text-uppercase fw-bold opacity-75" style="font-size: 0.7rem;">Tiến độ</small>
+                    </div>
+                </div>
+                
+                <div class="progress-container mx-3 mt-1">
+                    <div class="progress-bar-fill" style="width: @progress%"></div>
+                </div>
 
-                        <div class="row mb-3">
-                            <div class="col-12">
-                                <small class="text-muted d-block">S.Lượng yêu cầu</small>
-                                <span class="badge bg-info text-dark fs-6">@item.RequestedQty</span>
+                <div class="p-3">
+                    @foreach (var item in orderGroup)
+                    {
+                        var isCompleted = item.Status == "CLOSED";
+                        <div class="task-item @(isCompleted ? "picked" : "")">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="sku-name">@(string.IsNullOrEmpty(item.SkuName) ? "Sản phẩm #" + item.SkuId : item.SkuName)</div>
+                                    <div class="sku-code">SKU: @(string.IsNullOrEmpty(item.SkuCode) ? item.SkuId.ToString() : item.SkuCode)</div>
+                                    
+                                    <div class="mt-2 d-flex gap-3 flex-wrap">
+                                        <div>
+                                            <small class="text-muted d-block">Vị trí đi</small>
+                                            <strong>@item.FromLocation</strong>
+                                        </div>
+                                        <div>
+                                            <small class="text-muted d-block">Mã Pallet</small>
+                                            <span class="badge bg-warning text-dark">@(string.IsNullOrEmpty(item.PalletCode) ? "9999" : item.PalletCode)</span>
+                                        </div>
+                                        <div>
+                                            <small class="text-muted d-block">UOM</small>
+                                            <strong>@item.Uom</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge @(isCompleted ? "bg-success" : "bg-primary") fs-6 mb-1">
+                                        @item.PickedQty / @item.RequestedQty
+                                    </span>
+                                    <small class="d-block text-muted">@item.TaskType</small>
+                                </div>
                             </div>
-                        </div>
-
-                        <button type="button" class="btn btn-primary w-100 fw-bold py-2 btn-detail"
-                            data-id="@item.PickingTaskId" data-code="@item.TaskCode" data-bs-toggle="modal"
-                            data-bs-target="#scanModal">
-                            @if (!string.IsNullOrEmpty(item.TaskType) && item.TaskType.Equals("FullPallet", StringComparison.OrdinalIgnoreCase))
+                            
+                            @if (!isCompleted)
                             {
-                                @:🔍 Pick Full Pallet
+                                var isFullPallet = !string.IsNullOrEmpty(item.TaskType) && item.TaskType.Equals("FullPallet", StringComparison.OrdinalIgnoreCase);
+                                var btnClass = isFullPallet ? "btn-success" : "btn-primary";
+                                
+                                <button type="button" class="btn @btnClass w-100 mt-3 fw-bold py-2 btn-pick-pulse btn-detail"
+                                    data-id="@item.TaskId" data-code="@item.TaskCode" data-bs-toggle="modal"
+                                    data-bs-target="#scanModal">
+                                    @if (isFullPallet)
+                                    {
+                                        @:✅ Xác nhận (Nguyên Pallet)
+                                    }
+                                    else
+                                    {
+                                        @:⚡ Bắt đầu lấy hàng (Một phần)
+                                    }
+                                </button>
                             }
                             else
                             {
-                                @:🔍 Picking & Quét mã
+                                <div class="text-success text-center mt-2 fw-bold">
+                                    <i class="bi bi-check-circle-fill"></i> Đã hoàn thành
+                                </div>
                             }
-                        </button>
-                    </div>
+                        </div>
+                    }
                 </div>
             </div>
         }
-
     }
-
     else
-
     {
         <div class="col-12 text-center py-5">
             <span class="fs-1">📭</span>
@@ -91,7 +127,6 @@
             <a class="page-link" asp-action="Picking" asp-route-page="@(Model.PageIndex - 1)">Trước</a>
         </li>
         @for (int i = 1; i <= totalPages; i++)
-
         {
             <li class="page-item @(i == Model.PageIndex ? "active" : "")">
                 <a class="page-link" asp-action="Picking" asp-route-page="@i">@i</a>

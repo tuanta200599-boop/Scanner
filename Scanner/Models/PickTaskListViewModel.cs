@@ -13,15 +13,19 @@ namespace Scanner.Models
 
     public class PickTaskItemViewModel
     {
-        public int PickingTaskId { get; set; }
+        public int TaskId { get; set; }
         public int? WaveId { get; set; }
         public int? PickingBatchId { get; set; }
         public string TaskCode { get; set; } = string.Empty;
         public int OrderId { get; set; }
+        public string OrderNumber { get; set; } = string.Empty;
         public int OrderLineId { get; set; }
         public int InventoryId { get; set; }
         public int SkuId { get; set; }
+        public string SkuCode { get; set; } = string.Empty;
+        public string SkuName { get; set; } = string.Empty;
         public string LotNo { get; set; } = string.Empty;
+        public string PalletCode { get; set; } = string.Empty;
         public DateTime? ExpiryDate { get; set; }
         public string FromLocation { get; set; } = string.Empty;
         public string ToLocation { get; set; } = string.Empty;

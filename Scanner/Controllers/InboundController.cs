@@ -124,7 +124,7 @@ namespace Scanner.Controllers
                 }
                 else
                 {
-                    ModelState.AddModelError(string.Empty, "Không thể tải danh sách Pallet từ máy chủ. " + apiResult?.Message);
+                    ModelState.AddModelError(string.Empty, "Không thể tải danh sách Pallet code từ máy chủ. " + apiResult?.Message);
                 }
             }
             catch (Exception ex)
@@ -214,7 +214,7 @@ namespace Scanner.Controllers
                     id = palletId,
                     palletCode = palletCode,
                     palletName = palletName,
-                    isActive = true
+                    isActive = false
                 };
 
                 var apiResult = await _apiService.PutAsync<ApiResponse<object>>(ApiEndpoints.Configuration.UpdatePallet, payload);

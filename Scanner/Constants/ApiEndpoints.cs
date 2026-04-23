@@ -29,7 +29,7 @@ namespace Scanner.Constants
 
         public static class Outbound
         {
-            public const string GetPickTaskList = "Outbound/ListPickTask";
+            public const string GetPickTaskList = "Wms/Task/GetListPicking";
             public const string RecordPickingScan = "Outbound/RecordPickingScan";
         }
     }

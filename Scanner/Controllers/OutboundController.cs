@@ -23,6 +23,7 @@ namespace Scanner.Controllers
 
         public async Task<IActionResult> Picking(int page = 1, int? pageSize = null)
         {
+            Console.WriteLine("Hello Picking");
             int actualPageSize = pageSize ?? _configuration.GetValue<int>("ApiSettings:PageSize", 20);
 
             var viewModel = new PickTaskListViewModel
