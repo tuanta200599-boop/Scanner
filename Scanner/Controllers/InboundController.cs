@@ -9,17 +9,20 @@ namespace Scanner.Controllers
     [Authorize]
     public class InboundController : Controller
     {
+        private readonly ILogger<InboundController> _logger;
         private readonly IApiService _apiService;
         private readonly IConfiguration _configuration;
 
-        public InboundController(IApiService apiService, IConfiguration configuration)
+        public InboundController(ILogger<InboundController> logger, IApiService apiService, IConfiguration configuration)
         {
+            _logger = logger;
             _apiService = apiService;
             _configuration = configuration;
         }
 
         public async Task<IActionResult> Index(int page = 1, int? pageSize = null)
         {
+            _logger.LogInformation("Scanner App: Inbound Index accessed at {Time}", DateTime.UtcNow);
             int actualPageSize = pageSize ?? _configuration.GetValue<int>("ApiSettings:PageSize", 20);
 
             var viewModel = new AsnListViewModel
@@ -277,6 +280,7 @@ namespace Scanner.Controllers
         [HttpGet]
         public async Task<IActionResult> GetReceivingCount()
         {
+            _logger.LogInformation("Scanner App: AJAX GetReceivingCount called at {Time}", DateTime.UtcNow);
             try
             {
                 string endpoint = $"{ApiEndpoints.Inbound.GetAsnList}?page=1&pageSize=1";
