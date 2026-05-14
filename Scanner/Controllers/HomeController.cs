@@ -7,7 +7,7 @@ using System.Diagnostics;
 namespace Scanner.Controllers
 {
 
-    public class HomeController : BaseController
+    public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
         private readonly IApiService _apiService;
