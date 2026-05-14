@@ -54,12 +54,12 @@ builder.Services.AddAuthentication(options =>
  })
 .AddOpenIdConnect("oidc", options =>
 {
-    options.Authority = "https://oidc.aubot.vn/";
-    //options.Authority = "http://localhost:44310/";
-    options.RequireHttpsMetadata = true;
+    //options.Authority = "https://oidc.aubot.vn/";
+    options.Authority = "http://localhost:44310/";
+    options.RequireHttpsMetadata = false;
     options.ClientId = "pwa";
-    //options.ClientSecret = "vNN8PWQhYwoKGukxST4Y41W1Wf2AxD6w";
-    options.ClientSecret = "ewxHIu7co1Uuj3De4EZvOHjBzqCsDkBJ";
+    options.ClientSecret = "vNN8PWQhYwoKGukxST4Y41W1Wf2AxD6w";
+    //options.ClientSecret = "ewxHIu7co1Uuj3De4EZvOHjBzqCsDkBJ";
     options.ResponseType = "code";
 
     options.Scope.Clear();
