@@ -30,7 +30,9 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 builder.Services.Configure<CookiePolicyOptions>(options =>
 {
     options.CheckConsentNeeded = context => false; // Tắt check consent để không chặn cookie OIDC
-    options.MinimumSameSitePolicy = SameSiteMode.None;
+    options.MinimumSameSitePolicy = SameSiteMode.Unspecified; // Android 7 không hỗ trợ SameSite=None
+    options.OnAppendCookie = cookieContext => CheckSameSite(cookieContext.Context, cookieContext.CookieOptions);
+    options.OnDeleteCookie = cookieContext => CheckSameSite(cookieContext.Context, cookieContext.CookieOptions);
 });
 
 builder.Services.AddAuthentication(options =>
@@ -41,10 +43,11 @@ builder.Services.AddAuthentication(options =>
  })
 .AddCookie(options =>
  {
-     options.Cookie.SameSite = SameSiteMode.None; //None Bắt buộc cho HTTPS Proxy
+     options.Cookie.SameSite = SameSiteMode.None; // None Bắt buộc cho HTTPS Proxy
      options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Luôn dùng Secure cookie
      options.Cookie.HttpOnly = true;
      options.Cookie.Name = ".AspNetCore.Cookies";
+     options.Cookie.IsEssential = true; // Đảm bảo cookie luôn được gửi
  })
 .AddOpenIdConnect("oidc", options =>
 {
@@ -70,8 +73,10 @@ builder.Services.AddAuthentication(options =>
 
     options.NonceCookie.SameSite = SameSiteMode.None;
     options.NonceCookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.NonceCookie.IsEssential = true;
     options.CorrelationCookie.SameSite = SameSiteMode.None;
     options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.CorrelationCookie.IsEssential = true;
 
     options.ClaimActions.MapUniqueJsonKey("departmentId", "departmentId");
     options.ClaimActions.MapUniqueJsonKey("departmentName", "departmentName");
@@ -152,3 +157,35 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}").RequireAuthorization();
 
 app.Run();
+
+#region SameSite Compatibility
+void CheckSameSite(HttpContext httpContext, CookieOptions options)
+{
+    if (options.SameSite == SameSiteMode.None)
+    {
+        var userAgent = httpContext.Request.Headers["User-Agent"].ToString();
+        if (DisallowsSameSiteNone(userAgent))
+        {
+            // Trình duyệt cũ (Android 7, iOS 12) không hiểu SameSite=None
+            // Đặt về Unspecified để trình duyệt tự xử lý theo cách cũ
+            options.SameSite = SameSiteMode.Unspecified;
+        }
+    }
+}
+
+bool DisallowsSameSiteNone(string userAgent)
+{
+    if (string.IsNullOrEmpty(userAgent)) return false;
+
+    // iOS 12 Safari và các trình duyệt cũ hơn
+    if (userAgent.Contains("CPU iPhone OS 12") || userAgent.Contains("iPad; CPU OS 12")) return true;
+
+    // MacOS Safari 12
+    if (userAgent.Contains("Safari") && userAgent.Contains("Macintosh; Intel Mac OS X 10_14") && userAgent.Contains("Version/12")) return true;
+
+    // Chrome phiên bản 51 tới 66 (Phổ biến trên Android 7)
+    if (userAgent.Contains("Chrome/5") || userAgent.Contains("Chrome/6")) return true;
+
+    return false;
+}
+#endregion
