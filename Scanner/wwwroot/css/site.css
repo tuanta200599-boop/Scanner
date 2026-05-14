@@ -198,8 +198,8 @@ body {
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid var(--glass-border);
     box-shadow: var(--glass-shadow);
-    border-radius: 20px;
-    margin-bottom: 24px;
+    border-radius: 12px;
+    margin-bottom: 12px;
     overflow: hidden;
     transition: transform 0.3s ease;
 }
@@ -210,17 +210,17 @@ body {
 
 .order-header {
     background: var(--primary-gradient);
-    padding: 16px 20px;
+    padding: 10px 12px;
     color: white;
 }
 
 .task-item {
     background: white;
-    border-radius: 12px;
-    margin: 10px 0;
-    padding: 12px 15px;
-    border-left: 5px solid #764ba2;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    border-radius: 8px;
+    margin: 8px 0;
+    padding: 10px 12px;
+    border-left: 4px solid #764ba2;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
 }
 
 .task-item.picked {
@@ -244,15 +244,42 @@ body {
 }
 
 .sku-name {
-    font-size: 1.1rem;
+    font-size: 0.95rem;
     font-weight: 700;
     color: #2d3436;
+    line-height: 1.2;
 }
 
 .sku-code {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     color: #636e72;
     font-family: 'Courier New', Courier, monospace;
+}
+
+.task-details-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1.5fr 0.8fr;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.detail-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    color: #b2bec3;
+    display: block;
+    margin-bottom: 1px;
+}
+
+.detail-value {
+    font-size: 0.8rem;
+    font-weight: 600;
+    word-break: break-all;
+}
+
+.badge-compact {
+    padding: 0.25em 0.5em;
+    font-size: 0.7rem;
 }
 
 @keyframes pulse {

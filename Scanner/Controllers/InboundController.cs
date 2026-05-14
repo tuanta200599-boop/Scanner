@@ -208,15 +208,13 @@ namespace Scanner.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> UpdatePalletActiveStatus(int palletId, string palletCode, string palletName)
+        public async Task<IActionResult> UpdatePalletActiveStatus(string palletCode)
         {
             try
             {
                 var payload = new
                 {
-                    id = palletId,
                     palletCode = palletCode,
-                    palletName = palletName,
                     isActive = false
                 };
 

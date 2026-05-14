@@ -9,7 +9,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddHttpClient<Scanner.Services.IApiService, Scanner.Services.ApiService>();
+builder.Services.AddHttpClient<Scanner.Services.IApiService, Scanner.Services.ApiService>()
+    .AddUserAccessTokenHandler();
 builder.Logging.ClearProviders();
 builder.Logging.AddJsonConsole(options =>
 {
@@ -49,7 +50,7 @@ builder.Services.AddAuthentication(options =>
 {
     options.Authority = "https://oidc.aubot.vn/";
     //options.Authority = "http://localhost:44310/";
-    options.RequireHttpsMetadata = false;
+    options.RequireHttpsMetadata = true;
     options.ClientId = "pwa";
     //options.ClientSecret = "vNN8PWQhYwoKGukxST4Y41W1Wf2AxD6w";
     options.ClientSecret = "ewxHIu7co1Uuj3De4EZvOHjBzqCsDkBJ";
@@ -63,6 +64,7 @@ builder.Services.AddAuthentication(options =>
     options.Scope.Add("offline_access");
 
     options.SaveTokens = true;
+    //save toàn bộ vào token nếu bạn cấu hình savetoken =true
     options.GetClaimsFromUserInfoEndpoint = true;
     options.SignedOutRedirectUri = "/";
 
@@ -117,6 +119,8 @@ builder.Services.AddAuthentication(options =>
 
     };
 });
+//refresh token
+builder.Services.AddOpenIdConnectAccessTokenManagement();
 //builder.Services.AddAuthentication(options =>
 //{
 //    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
@@ -145,6 +149,6 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Home}/{action=Index}/{id?}").RequireAuthorization();
 
 app.Run();

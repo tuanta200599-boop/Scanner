@@ -195,7 +195,7 @@
             $.ajax({
                 url: '@Url.Action("UpdatePalletActiveStatus", "Inbound")',
                 type: 'POST',
-                data: { palletId: palletId, palletCode: palletCode, palletName: palletName },
+                data: { palletCode: palletCode },
                 success: function (response) {
                     if (!response.success) {
                         console.error('Không thể cập nhật trạng thái Pallet: ' + response.message);

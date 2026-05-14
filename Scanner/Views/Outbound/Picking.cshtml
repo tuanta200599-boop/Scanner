@@ -4,9 +4,9 @@
     ViewData["Title"] = "Outbound Picking";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h4>🛒 Lấy hàng (Picking)</h4>
-    <button class="btn btn-outline-secondary btn-sm" onclick="location.reload()">
+<div class="d-flex justify-content-between align-items-center mb-2 px-1">
+    <h5 class="mb-0 fw-bold"><i class="bi bi-cart-fill me-1"></i> Picking</h5>
+    <button class="btn btn-outline-secondary btn-sm py-1" style="font-size: 0.75rem;" onclick="location.reload()">
         <i class="bi bi-arrow-clockwise"></i> Làm mới
     </button>
 </div>
@@ -18,7 +18,7 @@
     </div>
 }
 
-<div class="container-fluid px-3">
+<div class="container-fluid px-2">
     @if (Model.Items != null && Model.Items.Any())
     {
         var groupedOrders = Model.Items.GroupBy(i => new { i.OrderId, i.OrderNumber });
@@ -32,74 +32,78 @@
             <div class="picking-order-card">
                 <div class="order-header d-flex justify-content-between align-items-center">
                     <div>
-                        <h5 class="mb-0 fw-bold">📦 Đơn hàng: @(string.IsNullOrEmpty(orderGroup.Key.OrderNumber) ? orderGroup.Key.OrderId.ToString() : orderGroup.Key.OrderNumber)</h5>
-                        <small class="opacity-75">ID: @orderGroup.Key.OrderId</small>
+                        <div class="fw-bold" style="font-size: 0.9rem;">📦 @(string.IsNullOrEmpty(orderGroup.Key.OrderNumber) ? orderGroup.Key.OrderId.ToString() : orderGroup.Key.OrderNumber)</div>
+                        <div class="opacity-75" style="font-size: 0.7rem;">ID: @orderGroup.Key.OrderId</div>
                     </div>
                     <div class="text-end">
-                        <div class="fw-bold fs-5">@pickedTasks / @totalTasks</div>
-                        <small class="text-uppercase fw-bold opacity-75" style="font-size: 0.7rem;">Tiến độ</small>
+                        <div class="fw-bold" style="font-size: 1rem;">@pickedTasks / @totalTasks</div>
+                        <div class="text-uppercase fw-bold opacity-75" style="font-size: 0.6rem;">Tiến độ</div>
                     </div>
                 </div>
                 
-                <div class="progress-container mx-3 mt-1">
+                <div class="progress-container mx-2 mt-1" style="height: 4px;">
                     <div class="progress-bar-fill" style="width: @progress%"></div>
                 </div>
 
-                <div class="p-3">
+                <div class="px-2 py-1">
                     @foreach (var item in orderGroup)
                     {
                         var isCompleted = item.Status == "CLOSED";
                         <div class="task-item @(isCompleted ? "picked" : "")">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
+                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                <div style="flex: 1;">
                                     <div class="sku-name">@(string.IsNullOrEmpty(item.SkuName) ? "Sản phẩm #" + item.SkuId : item.SkuName)</div>
                                     <div class="sku-code">SKU: @(string.IsNullOrEmpty(item.SkuCode) ? item.SkuId.ToString() : item.SkuCode)</div>
-                                    
-                                    <div class="mt-2 d-flex gap-3 flex-wrap">
-                                        <div>
-                                            <small class="text-muted d-block">Vị trí đi</small>
-                                            <strong>@item.FromLocation</strong>
-                                        </div>
-                                        <div>
-                                            <small class="text-muted d-block">Mã Pallet</small>
-                                            <span class="badge bg-warning text-dark">@(string.IsNullOrEmpty(item.PalletCode) ? "9999" : item.PalletCode)</span>
-                                        </div>
-                                        <div>
-                                            <small class="text-muted d-block">UOM</small>
-                                            <strong>@item.Uom</strong>
-                                        </div>
-                                    </div>
                                 </div>
-                                <div class="text-end">
-                                    <span class="badge @(isCompleted ? "bg-success" : "bg-primary") fs-6 mb-1">
+                                <div class="text-end ms-2">
+                                    <span class="badge @(isCompleted ? "bg-success" : "bg-primary") badge-compact">
                                         @item.PickedQty / @item.RequestedQty
                                     </span>
-                                    <small class="d-block text-muted">@item.TaskType</small>
+                                    <div class="text-muted" style="font-size: 0.65rem;">@item.TaskType</div>
+                                </div>
+                            </div>
+
+                            <div class="task-details-grid">
+                                <div>
+                                    <span class="detail-label">Vị trí</span>
+                                    <div class="detail-value text-primary">@item.FromLocation</div>
+                                </div>
+                                <div>
+                                    <span class="detail-label">Pallet</span>
+                                    <div class="detail-value text-truncate" title="@item.PalletCode">
+                                        <span class="badge bg-warning text-dark px-1 py-0" style="font-size: 0.65rem;">@(string.IsNullOrEmpty(item.PalletCode) ? "9999" : item.PalletCode)</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <span class="detail-label">UOM</span>
+                                    <div class="detail-value">@item.Uom</div>
                                 </div>
                             </div>
                             
                             @if (!isCompleted)
                             {
                                 var isFullPallet = !string.IsNullOrEmpty(item.TaskType) && item.TaskType.Equals("FullPallet", StringComparison.OrdinalIgnoreCase);
-                                var btnClass = isFullPallet ? "btn-success" : "btn-primary";
                                 
-                                <button type="button" class="btn @btnClass w-100 mt-3 fw-bold py-2 btn-pick-pulse btn-detail"
-                                    data-id="@item.TaskId" data-code="@item.TaskCode" data-bs-toggle="modal"
-                                    data-bs-target="#scanModal">
-                                    @if (isFullPallet)
-                                    {
-                                        @:✅ Xác nhận (Nguyên Pallet)
-                                    }
-                                    else
-                                    {
-                                        @:⚡ Bắt đầu lấy hàng (Một phần)
-                                    }
-                                </button>
+                                if (isFullPallet)
+                                {
+                                    <button type="button" class="btn btn-success btn-sm w-100 mt-2 fw-bold py-2 btn-pick-pulse"
+                                        onclick="openPalletModal('@item.PalletCode')" style="font-size: 0.85rem; border-radius: 6px;">
+                                        ✅ Xác nhận Pallet
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button type="button" class="btn btn-primary btn-sm w-100 mt-2 fw-bold py-2 btn-pick-pulse"
+                                        onclick="openPickingModal(@item.TaskId, '@(string.IsNullOrEmpty(item.SkuName) ? "Sản phẩm #" + item.SkuId : item.SkuName)', '@item.PalletCode')"
+                                        style="font-size: 0.85rem; border-radius: 6px;">
+                                        ⚡ Bắt đầu Picking
+                                    </button>
+                                }
                             }
                             else
                             {
-                                <div class="text-success text-center mt-2 fw-bold">
-                                    <i class="bi bi-check-circle-fill"></i> Đã hoàn thành
+                                <div class="text-success text-center mt-1 fw-bold" style="font-size: 0.8rem;">
+                                    <i class="bi bi-check-circle-fill"></i> Đã xong
                                 </div>
                             }
                         </div>
@@ -138,32 +142,63 @@
     </ul>
 </nav>
 
-<!-- Modal Scan -->
-<div class="modal fade" id="scanModal" tabindex="-1" aria-labelledby="scanModalLabel" aria-hidden="true">
+<!-- Modal Xác nhận Pallet (Giao diện cũ) -->
+<div class="modal fade" id="palletModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="scanModalLabel">Quét mã Handheld</h5>
+                <h5 class="modal-title"><i class="bi bi-box-seam me-2"></i> Xác nhận Pallet</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="scanForm">
-                    <input type="hidden" id="modalTaskId" />
-                    <div class="mb-3">
-                        <label class="form-label">Mã nhiệm vụ</label>
-                        <input type="text" class="form-control" id="modalTaskCode" readonly />
-                    </div>
-                    <div class="mb-3">
-                        <label for="barcodeInput" class="form-label">Mã vạch (Barcode)</label>
-                        <input type="text" class="form-control" id="barcodeInput"
-                            placeholder="Quét hoặc nhập mã vạch..." required autocomplete="off" />
-                    </div>
-                </form>
-                <div id="scanResult" class="mt-2 text-center" style="display: none; font-weight: bold;"></div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Mã Pallet cần xác nhận</label>
+                    <input type="text" class="form-control form-control-lg fw-bold text-primary" id="confirmPalletCode" readonly />
+                </div>
+                <div class="mb-3">
+                    <label for="palletScanInput" class="form-label">Quét lại mã Pallet để xác nhận</label>
+                    <input type="text" class="form-control form-control-lg" id="palletScanInput"
+                        placeholder="Quét mã Pallet..." autocomplete="off" />
+                </div>
+                <div id="palletResult" class="mt-2 text-center" style="display: none; font-weight: bold;"></div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                <button type="button" class="btn btn-success" id="btnSubmitScan">Xác nhận</button>
+                <button type="button" class="btn btn-success" id="btnSubmitPallet">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Picking Fullscreen (Giao diện mới) -->
+<div class="modal fade" id="pickingModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-upc-scan me-2"></i> Picking: <span id="modalSkuName" class="text-warning"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body d-flex flex-column" style="background-color: #f8f9fa;">
+                <div class="card shadow-sm mb-3 border-0">
+                    <div class="card-body text-center p-3">
+                        <div class="mb-2">
+                            <span class="badge bg-info text-dark" id="modalPalletLabel"></span>
+                        </div>
+                        <label for="pickingBarcodeInput" class="form-label fw-bold text-muted mb-2">Quét mã sản phẩm (Barcode)</label>
+                        <input type="text" id="pickingBarcodeInput"
+                            class="form-control form-control-lg text-center fw-bold fs-3"
+                            placeholder="Tít mã vào đây..." autocomplete="off" inputmode="none">
+                    </div>
+                </div>
+
+                <div class="flex-grow-1 overflow-auto">
+                    <h6 class="text-muted fw-bold mb-2 small">LỊCH SỬ QUÉT:</h6>
+                    <ul id="pickingHistoryList" class="list-group list-group-flush rounded shadow-sm">
+                        <!-- History items -->
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
@@ -171,91 +206,155 @@
 
 @section Scripts {
     <script>
+        var currentTaskId = 0;
+        var currentPalletCode = '';
+        var isProcessing = false;
+        var palletModal, pickingModal;
+
         $(document).ready(function () {
-            // Khi mở modal, gán dữ liệu vào các input
-            $('#scanModal').on('show.bs.modal', function (event) {
-                var button = $(event.relatedTarget);
-                var taskId = button.data('id');
-                var taskCode = button.data('code');
+            palletModal = new bootstrap.Modal(document.getElementById('palletModal'));
+            pickingModal = new bootstrap.Modal(document.getElementById('pickingModal'));
 
-                var modal = $(this);
-                modal.find('#modalTaskId').val(taskId);
-                modal.find('#modalTaskCode').val(taskCode);
-                modal.find('#barcodeInput').val('');
-                $('#scanResult').hide().removeClass('text-success text-danger').text('');
+            // --- PALLET WORKFLOW ---
+            window.openPalletModal = function(palletCode) {
+                currentPalletCode = palletCode;
+                $('#confirmPalletCode').val(palletCode);
+                $('#palletScanInput').val('');
+                $('#palletResult').hide();
+                palletModal.show();
+            };
+
+            $('#palletModal').on('shown.bs.modal', function () {
+                $('#palletScanInput').focus();
             });
 
-            // Focus vào input mã vạch khi modal mở xong
-            $('#scanModal').on('shown.bs.modal', function () {
-                $('#barcodeInput').focus();
-            });
-
-            // Xử lý khi submit form quét mã
-            $('#btnSubmitScan').click(function () {
-                var taskId = $('#modalTaskId').val();
-                var barcode = $('#barcodeInput').val();
-
-                if (!barcode) {
-                    $('#scanResult').text('Vui lòng nhập mã vạch!').removeClass('text-success').addClass('text-danger').show();
+            $('#btnSubmitPallet').click(function() {
+                var scannedCode = $('#palletScanInput').val().trim();
+                if (scannedCode !== currentPalletCode) {
+                    $('#palletResult').text('Mã Pallet không khớp!').removeClass('text-success').addClass('text-danger').show();
+                    playErrorBeep();
                     return;
                 }
+                submitPalletActivation();
+            });
 
-                var btn = $(this);
-                var originalHtml = btn.html();
-                btn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>...').prop('disabled', true);
+            $('#palletScanInput').keypress(function(e) {
+                if (e.which == 13) {
+                    $('#btnSubmitPallet').click();
+                }
+            });
 
-                // Gửi AJAX POST tới RecordPickingScan
-                $.post('@Url.Action("RecordPickingScan", "Outbound")', { taskId: taskId, barcode: barcode })
+            function submitPalletActivation() {
+                var btn = $('#btnSubmitPallet');
+                btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+
+                $.post('@Url.Action("UpdatePalletActiveStatus", "Outbound")', { palletCode: currentPalletCode })
+                    .done(function(response) {
+                        if (response.success) {
+                            playSuccessBeep();
+                            $('#palletResult').text('Xác nhận thành công!').removeClass('text-danger').addClass('text-success').show();
+                            setTimeout(() => location.reload(), 800);
+                        } else {
+                            playErrorBeep();
+                            $('#palletResult').text(response.message).removeClass('text-success').addClass('text-danger').show();
+                            btn.prop('disabled', false).text('Xác nhận');
+                        }
+                    })
+                    .fail(function() {
+                        playErrorBeep();
+                        $('#palletResult').text('Lỗi kết nối!').show();
+                        btn.prop('disabled', false).text('Xác nhận');
+                    });
+            }
+
+            // --- PICKING WORKFLOW ---
+            window.openPickingModal = function(taskId, skuName, palletCode) {
+                currentTaskId = taskId;
+                currentPalletCode = palletCode;
+                $('#modalSkuName').text(skuName);
+                $('#modalPalletLabel').text('Pallet: ' + palletCode);
+                $('#pickingBarcodeInput').val('');
+                $('#pickingHistoryList').empty();
+                pickingModal.show();
+            };
+
+            $('#pickingModal').on('shown.bs.modal', function () {
+                $('#pickingBarcodeInput').focus();
+            });
+
+            $('#pickingBarcodeInput').keypress(function(e) {
+                if (e.which == 13) {
+                    var barcode = $(this).val().trim();
+                    if (barcode) processPickingScan(barcode);
+                }
+            });
+
+            function processPickingScan(barcode) {
+                if (isProcessing) return;
+                isProcessing = true;
+                $('#pickingBarcodeInput').prop('disabled', true);
+
+                $.post('@Url.Action("RecordPickingScan", "Outbound")', { taskId: currentTaskId, barcode: barcode })
                     .done(function (response) {
                         if (response.success) {
-                            playBeepSound();
-                            $('#scanResult').removeClass('text-danger').addClass('text-success').text('Quét mã [' + barcode + '] thành công!').show();
-                            $('#barcodeInput').val('').focus();
-                            btn.html(originalHtml).prop('disabled', false);
+                            playSuccessBeep();
+                            addPickingHistoryItem(barcode, true, response.message || 'Thành công');
                         } else {
-                            $('#scanResult').removeClass('text-success').addClass('text-danger').text('Lỗi: ' + response.message).show();
-                            btn.html(originalHtml).prop('disabled', false);
-                            $('#barcodeInput').focus();
+                            playErrorBeep();
+                            addPickingHistoryItem(barcode, false, response.message || 'Lỗi');
                         }
                     })
                     .fail(function () {
-                        $('#scanResult').removeClass('text-success').addClass('text-danger').text('Lỗi kết nối máy chủ!').show();
-                        btn.html(originalHtml).prop('disabled', false);
-                        $('#barcodeInput').focus();
+                        playErrorBeep();
+                        addPickingHistoryItem(barcode, false, 'Lỗi kết nối máy chủ');
+                    })
+                    .always(function() {
+                        $('#pickingBarcodeInput').val('').prop('disabled', false).focus();
+                        isProcessing = false;
                     });
-            });
-
-            // Hàm phát tiếng beep
-            function playBeepSound() {
-                try {
-                    var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                    var oscillator = audioCtx.createOscillator();
-                    var gainNode = audioCtx.createGain();
-
-                    oscillator.type = 'sine';
-                    oscillator.frequency.value = 1000; // Tần số beep
-                    
-                    gainNode.gain.setValueAtTime(1, audioCtx.currentTime); 
-                    
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioCtx.destination);
-                    
-                    oscillator.start();
-                    setTimeout(function() { 
-                        oscillator.stop(); 
-                    }, 150); // Beep kéo dài 150ms
-                } catch (e) {
-                    console.log('Không hỗ trợ Web Audio API');
-                }
             }
 
-            // Cho phép nhấn Enter để xác nhận mã vạch
-            $('#barcodeInput').keypress(function (e) {
-                if (e.which == 13) {
-                    e.preventDefault();
-                    $('#btnSubmitScan').click();
-                }
-            });
+            function addPickingHistoryItem(barcode, isSuccess, message) {
+                var time = new Date().toLocaleTimeString('vi-VN', { hour12: false });
+                var icon = isSuccess ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-danger';
+                var bg = isSuccess ? 'bg-success-subtle' : 'bg-danger-subtle';
+                
+                var html = `
+                    <li class="list-group-item d-flex align-items-center gap-3 border-start border-4 ${isSuccess ? 'border-success' : 'border-danger'} mb-2 ${bg}">
+                        <i class="bi ${icon} fs-4"></i>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between">
+                                <strong class="fs-6">${barcode}</strong>
+                                <small class="text-muted">${time}</small>
+                            </div>
+                            <div class="text-muted small">${message}</div>
+                        </div>
+                    </li>
+                `;
+                $('#pickingHistoryList').prepend(html);
+            }
+
+            // --- AUDIO FEEDBACK ---
+            function playBeep(freq, type, duration, vol) {
+                try {
+                    var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    var osc = audioCtx.createOscillator();
+                    var gain = audioCtx.createGain();
+                    osc.type = type;
+                    osc.frequency.value = freq;
+                    gain.gain.value = vol;
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start();
+                    setTimeout(() => osc.stop(), duration);
+                } catch (e) { console.log(e); }
+            }
+
+            function playSuccessBeep() { playBeep(1000, 'sine', 200, 0.3); }
+            function playErrorBeep() { 
+                playBeep(300, 'sawtooth', 300, 0.5);
+                setTimeout(() => playBeep(300, 'sawtooth', 300, 0.5), 350);
+            }
         });
     </script>
 }

@@ -39,25 +39,19 @@ namespace Scanner.Services
         {
             if (_httpContextAccessor.HttpContext == null) return;
 
-            string? accessToken = null;
-            try
-            {
-                accessToken = await _httpContextAccessor.HttpContext.GetTokenAsync("access_token");
-                Debug.WriteLine(accessToken);
-            }
-            catch
-            {
-                // Không có authentication scheme (chế độ demo/không có OIDC) — bỏ qua, dùng BearerToken từ config
-            }
+            // Kiểm tra xem đã có token trong context chưa
+            var accessToken = await _httpContextAccessor.HttpContext.GetTokenAsync("access_token");
 
+            // Nếu KHÔNG có token từ OIDC (ví dụ: chưa đăng nhập hoặc dùng chế độ demo), 
+            // thì mới dùng BearerToken từ config.
+            // Nếu CÓ token từ OIDC, UserAccessTokenHandler sẽ tự động xử lý (bao gồm cả refresh).
             if (string.IsNullOrEmpty(accessToken))
             {
-                accessToken = _configuration["ApiSettings:BearerToken"] ?? string.Empty;
-            }
-
-            if (!string.IsNullOrEmpty(accessToken))
-            {
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                var fallbackToken = _configuration["ApiSettings:BearerToken"];
+                if (!string.IsNullOrEmpty(fallbackToken))
+                {
+                    _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", fallbackToken);
+                }
             }
         }
 

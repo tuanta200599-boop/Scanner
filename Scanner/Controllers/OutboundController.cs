@@ -103,5 +103,31 @@ namespace Scanner.Controllers
                 return Json(new { count = 0 });
             }
         }
+        [HttpPost]
+        public async Task<IActionResult> UpdatePalletActiveStatus(string palletCode)
+        {
+            try
+            {
+                var payload = new
+                {
+                    palletCode = palletCode,
+                    isActive = true
+                };
+
+                var apiResult = await _apiService.PutAsync<ApiResponse<object>>(ApiEndpoints.Configuration.UpdatePallet, payload);
+
+                if (apiResult != null && apiResult.IsSuccess)
+                {
+                    return Json(new { success = true });
+                }
+
+                return Json(new { success = false, message = apiResult?.Message ?? "Lỗi từ máy chủ khi cập nhật Pallet." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Lỗi hệ thống: " + ex.Message });
+            }
+        }
+
     }
 }
