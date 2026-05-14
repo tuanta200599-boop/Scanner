@@ -1,7 +1,7 @@
 {
     "name": "WMS Handheld Scanner",
     "short_name": "WMS",
-    "display": "standalone",
+    "display": "minimal-ui",
     "orientation": "portrait",
     "start_url": "/",
     "scope": "/",

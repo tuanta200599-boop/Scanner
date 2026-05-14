@@ -48,6 +48,9 @@ builder.Services.AddAuthentication(options =>
      options.Cookie.HttpOnly = true;
      options.Cookie.Name = ".AspNetCore.Cookies";
      options.Cookie.IsEssential = true; // Đảm bảo cookie luôn được gửi
+     options.ExpireTimeSpan = TimeSpan.FromDays(30); // Giữ phiên đăng nhập 30 ngày
+     options.SlidingExpiration = true; // Tự động gia hạn khi có hoạt động
+     options.Cookie.MaxAge = options.ExpireTimeSpan; // Thiết lập cookie bền vững (Persistent)
  })
 .AddOpenIdConnect("oidc", options =>
 {
